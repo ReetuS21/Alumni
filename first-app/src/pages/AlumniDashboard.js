@@ -12,11 +12,7 @@ import { useSearchParams } from "react-router-dom";
 import {
   Briefcase,
   Users,
-  Search,
-  PlusCircle,
-  MessageSquare,
-  Send,
-  MoreVertical,
+  Building,
   X
 } from "lucide-react";
 
@@ -36,7 +32,6 @@ export const AlumniDashboard = () => {
   const [shortlistedUids, setShortlistedUids] = useState([]);
 
   // Post Form State
-  const [postType, setPostType] = useState("hiring");
   const [postTitle, setPostTitle] = useState("");
   const [postBody, setPostBody] = useState("");
   const [posting, setPosting] = useState(false);
@@ -70,7 +65,7 @@ export const AlumniDashboard = () => {
       authorUid: user.uid,
       authorName: user.name || "Alumni",
       authorRole: "alumni",
-      type: postType,
+      type: "hiring",
       title: postTitle,
       body: postBody,
       options: []
@@ -101,216 +96,185 @@ export const AlumniDashboard = () => {
 
   return (
     <AppLayout title="Alumni Dashboard">
-      {/* Metric Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        {/* Solid Blue Highlight Card */}
-        <div className="bg-blue-600 text-white p-5 rounded-[20px] shadow-lg shadow-blue-500/20 flex flex-col justify-between">
-          <div className="flex justify-between items-start">
-            <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
-              <Users className="w-5 h-5" />
-            </div>
-            <button className="text-white/70 hover:text-white">
-              <MoreVertical className="w-4 h-4" />
-            </button>
+      {/* 1. Small Compact Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-blue-600 text-white p-3.5 rounded-2xl shadow-md shadow-blue-500/15 flex items-center justify-between">
+          <div>
+            <span className="text-[11px] text-blue-100 font-medium block">Junior Candidates</span>
+            <h3 className="text-xl font-black text-white mt-0.5 tracking-tight">{students.length}</h3>
           </div>
-          <div className="mt-4">
-            <span className="text-xs text-blue-100 font-medium">Junior Candidates</span>
-            <h3 className="text-3xl font-extrabold text-white mt-1 tracking-tight">{students.length}</h3>
+          <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-white shrink-0">
+            <Users className="w-4 h-4" />
           </div>
         </div>
 
-        {/* Metric Card 2 */}
-        <div className="bg-white p-5 rounded-[20px] border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <div className="flex justify-between items-start">
-            <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <Users className="w-5 h-5" />
-            </div>
-            <button className="text-slate-300 hover:text-slate-500">
-              <MoreVertical className="w-4 h-4" />
-            </button>
+        <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] text-slate-400 font-medium block">Shortlisted Candidates</span>
+            <h3 className="text-xl font-black text-slate-900 mt-0.5 tracking-tight">{shortlistedUids.length}</h3>
           </div>
-          <div className="mt-4">
-            <span className="text-xs text-slate-400 font-medium">Shortlisted Candidates</span>
-            <h3 className="text-3xl font-extrabold text-slate-900 mt-1 tracking-tight">{shortlistedUids.length}</h3>
+          <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+            <Building className="w-4 h-4" />
           </div>
         </div>
 
-        {/* Metric Card 3 */}
-        <div className="bg-white p-5 rounded-[20px] border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <div className="flex justify-between items-start">
-            <div className="w-10 h-10 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center">
-              <Briefcase className="w-5 h-5" />
-            </div>
-            <button className="text-slate-300 hover:text-slate-500">
-              <MoreVertical className="w-4 h-4" />
-            </button>
+        <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[11px] text-slate-400 font-medium block">Applications Received</span>
+            <h3 className="text-xl font-black text-slate-900 mt-0.5 tracking-tight">{applications.length}</h3>
           </div>
-          <div className="mt-4">
-            <span className="text-xs text-slate-400 font-medium">Applications Received</span>
-            <h3 className="text-3xl font-extrabold text-slate-900 mt-1 tracking-tight">{applications.length}</h3>
+          <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+            <Briefcase className="w-4 h-4" />
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-white p-2 rounded-2xl border border-slate-200/80 flex space-x-2">
-        <button
-          onClick={() => setActiveTab("search")}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "search" ? "bg-blue-600 text-white shadow-xs" : "text-slate-500 hover:text-slate-900"
-          }`}
-        >
-          Search Students & Shortlist
-        </button>
-
-        <button
-          onClick={() => setActiveTab("createPost")}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "createPost" ? "bg-blue-600 text-white shadow-xs" : "text-slate-500 hover:text-slate-900"
-          }`}
-        >
-          Post Hiring Job
-        </button>
-
-        <button
-          onClick={() => setActiveTab("chat")}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-            activeTab === "chat" ? "bg-blue-600 text-white shadow-xs" : "text-slate-500 hover:text-slate-900"
-          }`}
-        >
-          Global Discussion Box
-        </button>
-      </div>
-
-      {/* TAB 1: SEARCH STUDENTS */}
-      {activeTab === "search" && (
-        <div className="space-y-4">
-          <div className="bg-white p-4 rounded-[20px] border border-slate-200/80 flex items-center justify-between">
-            <input
-              type="text"
-              placeholder="Search students by skill (React, Python, Node.js) or location..."
-              value={skillSearch}
-              onChange={(e) => setSkillSearch(e.target.value)}
-              className="w-full p-2 bg-[#f4f6fa] border-none rounded-xl text-xs outline-none"
-            />
+      {/* 2. Main Dual Column Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* Left Column (7 cols): Search & Post Creation */}
+        <div className="lg:col-span-7 space-y-4">
+          
+          <div className="bg-white p-1.5 rounded-xl border border-slate-200/80 flex space-x-1">
+            <button
+              onClick={() => setActiveTab("search")}
+              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                activeTab === "search" ? "bg-blue-600 text-white shadow-2xs" : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              Search & Shortlist Juniors
+            </button>
+            <button
+              onClick={() => setActiveTab("createPost")}
+              className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                activeTab === "createPost" ? "bg-blue-600 text-white shadow-2xs" : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              Post Job Opening
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {filteredStudents.map(student => (
-              <div key={student.uid || student.email} className="bg-white p-5 rounded-[20px] border border-slate-200/80 shadow-xs space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-700 font-bold flex items-center justify-center text-sm">
-                      {student.name?.[0] || "S"}
+          {activeTab === "search" && (
+            <div className="space-y-3">
+              <input
+                type="text"
+                placeholder="Filter candidates by skill (React, Python, Node.js) or location..."
+                value={skillSearch}
+                onChange={(e) => setSkillSearch(e.target.value)}
+                className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none"
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {filteredStudents.map(student => (
+                  <div key={student.uid || student.email} className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-bold text-xs text-slate-900">{student.name}</h4>
+                        <p className="text-[10px] text-slate-400">{student.designation}</p>
+                      </div>
+
+                      <div className="flex space-x-1.5">
+                        <button
+                          onClick={() => setSelectedStudent(student)}
+                          className="bg-slate-100 text-slate-700 text-[11px] font-bold px-2.5 py-1 rounded-lg hover:bg-slate-200"
+                        >
+                          Profile
+                        </button>
+                        <button
+                          onClick={() => toggleShortlist(student.uid)}
+                          className={`text-[11px] font-bold px-2.5 py-1 rounded-lg transition-all ${
+                            shortlistedUids.includes(student.uid)
+                              ? "bg-emerald-600 text-white"
+                              : "bg-blue-600 text-white hover:bg-blue-700"
+                          }`}
+                        >
+                          {shortlistedUids.includes(student.uid) ? "✓ Shortlisted" : "+ Shortlist"}
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-bold text-sm text-slate-900">{student.name}</h4>
-                      <p className="text-xs text-slate-400">{student.designation}</p>
+
+                    <div className="flex flex-wrap gap-1">
+                      {student.skills?.map(sk => (
+                        <span key={sk} className="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-100">
+                          {sk}
+                        </span>
+                      ))}
                     </div>
                   </div>
-
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => setSelectedStudent(student)}
-                      className="bg-slate-100 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-xl hover:bg-slate-200"
-                    >
-                      Profile
-                    </button>
-                    <button
-                      onClick={() => toggleShortlist(student.uid)}
-                      className={`text-xs font-bold px-3 py-1.5 rounded-xl transition-all ${
-                        shortlistedUids.includes(student.uid)
-                          ? "bg-emerald-600 text-white"
-                          : "bg-blue-600 text-white hover:bg-blue-700"
-                      }`}
-                    >
-                      {shortlistedUids.includes(student.uid) ? "✓ Shortlisted" : "+ Shortlist"}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-1">
-                  {student.skills?.map(sk => (
-                    <span key={sk} className="bg-blue-50 text-blue-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-blue-100">
-                      {sk}
-                    </span>
-                  ))}
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 2: POST HIRING JOB */}
-      {activeTab === "createPost" && (
-        <div className="max-w-xl bg-white p-6 rounded-[20px] border border-slate-200/80 shadow-xs space-y-4">
-          <h3 className="font-bold text-slate-900 text-base">Post Hiring Opening</h3>
-
-          {postSuccess && (
-            <div className="p-3 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold">
-              {postSuccess}
             </div>
           )}
 
-          <form onSubmit={handleCreatePost} className="space-y-3">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Title</label>
-              <input
-                type="text"
-                required
-                value={postTitle}
-                onChange={(e) => setPostTitle(e.target.value)}
-                placeholder="e.g. Frontend Engineer Opening"
-                className="w-full p-2.5 bg-[#f4f6fa] border-none rounded-xl text-xs"
-              />
-            </div>
+          {activeTab === "createPost" && (
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-3">
+              <h3 className="font-bold text-sm text-slate-900">Post Hiring Job Opening</h3>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Description</label>
-              <textarea
-                rows={4}
-                required
-                value={postBody}
-                onChange={(e) => setPostBody(e.target.value)}
-                placeholder="Mention requirements..."
-                className="w-full p-2.5 bg-[#f4f6fa] border-none rounded-xl text-xs"
-              />
-            </div>
+              {postSuccess && (
+                <div className="p-2.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold">
+                  {postSuccess}
+                </div>
+              )}
 
-            <button
-              type="submit"
-              disabled={posting}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-xs"
-            >
-              Publish Job Post
-            </button>
-          </form>
+              <form onSubmit={handleCreatePost} className="space-y-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={postTitle}
+                    onChange={(e) => setPostTitle(e.target.value)}
+                    placeholder="Job Title..."
+                    className="w-full p-2 bg-[#f4f6fa] border-none rounded-xl text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Description</label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={postBody}
+                    onChange={(e) => setPostBody(e.target.value)}
+                    placeholder="Job description and referral instructions..."
+                    className="w-full p-2 bg-[#f4f6fa] border-none rounded-xl text-xs"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={posting}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-xl text-xs transition-all"
+                >
+                  Publish Job Post
+                </button>
+              </form>
+            </div>
+          )}
+
         </div>
-      )}
 
-      {/* TAB 3: DISCUSSION */}
-      {activeTab === "chat" && (
-        <GlobalDiscussionBox />
-      )}
+        {/* Right Column (5 cols): GLOBAL CHATBOX FRONT AND CENTER */}
+        <div className="lg:col-span-5">
+          <div className="sticky top-20">
+            <GlobalDiscussionBox />
+          </div>
+        </div>
 
-      {/* Student View Modal */}
+      </div>
+
       {selectedStudent && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-[24px] p-6 max-w-md w-full shadow-2xl space-y-4 relative">
+          <div className="bg-white rounded-[24px] p-6 max-w-md w-full shadow-2xl space-y-3 relative">
             <button
               onClick={() => setSelectedStudent(null)}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 bg-slate-100 rounded-full"
             >
               <X className="w-4 h-4" />
             </button>
-            <h3 className="font-bold text-slate-900 text-lg">{selectedStudent.name}</h3>
+            <h3 className="font-bold text-slate-900 text-base">{selectedStudent.name}</h3>
             <p className="text-xs text-slate-500">{selectedStudent.designation}</p>
-            <div className="text-xs text-slate-600 space-y-2">
-              <p><strong>Summary:</strong> {selectedStudent.summary || "N/A"}</p>
-              <p><strong>Skills:</strong> {selectedStudent.skills?.join(", ") || "N/A"}</p>
-              <p><strong>Location:</strong> {selectedStudent.location || "N/A"}</p>
-            </div>
+            <p className="text-xs text-slate-600">Skills: {selectedStudent.skills?.join(", ") || "N/A"}</p>
             <button
               onClick={() => {
                 toggleShortlist(selectedStudent.uid);

@@ -3,15 +3,12 @@ import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
-  MessageSquare,
   User,
   Search,
   LogOut,
   Bell,
   Database,
   Info,
-  Building,
-  Briefcase,
   Users,
   FileText
 } from "lucide-react";
@@ -42,69 +39,61 @@ export const AppLayout = ({ children, title = "Dashboard" }) => {
 
   return (
     <div className="flex h-screen bg-[#f4f6fa] font-sans overflow-hidden text-slate-800">
-      {/* 1. Left Vertical Sidebar (Matching Image 1 Aesthetic) */}
-      <aside className="w-20 lg:w-64 bg-white border-r border-slate-200/80 flex flex-col justify-between p-4 z-30 shrink-0">
+      {/* 1. Left Vertical Sidebar */}
+      <aside className="w-64 bg-white border-r border-slate-200/80 flex flex-col justify-between p-4 z-30 shrink-0 hidden md:flex">
         <div className="space-y-8">
           {/* Logo Brand */}
           <div className="flex items-center space-x-3 px-2 pt-2">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-xl shadow-md shadow-blue-500/20">
+            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-lg shadow-md shadow-blue-500/20">
               ⚡
             </div>
-            <div className="hidden lg:block">
-              <h1 className="font-bold text-slate-900 text-lg leading-tight tracking-tight">Alumni Hub</h1>
+            <div>
+              <h1 className="font-bold text-slate-900 text-base leading-tight tracking-tight">Alumni Hub</h1>
               <span className="text-[11px] font-medium text-slate-400">MCA Platform</span>
             </div>
           </div>
 
           {/* Navigation Links */}
-          <nav className="space-y-1.5">
+          <nav className="space-y-1">
             <Link
               to={user ? `/${user.role}` : "/auth"}
-              className={`flex items-center space-x-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 location.pathname === `/${user?.role}`
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/25"
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
                   : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
               }`}
             >
-              <LayoutDashboard className="w-5 h-5 shrink-0" />
-              <span className="hidden lg:inline">Dashboard</span>
-            </Link>
-
-            <Link
-              to={user ? `/${user.role}?tab=discussion` : "/auth"}
-              className="flex items-center space-x-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all"
-            >
-              <MessageSquare className="w-5 h-5 shrink-0" />
-              <span className="hidden lg:inline">Discussion Box</span>
+              <LayoutDashboard className="w-4 h-4 shrink-0" />
+              <span>Main Dashboard</span>
             </Link>
 
             {user?.role === "student" && (
               <Link
                 to="/student?tab=profile"
-                className="flex items-center space-x-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all"
+                className="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all"
               >
-                <User className="w-5 h-5 shrink-0" />
-                <span className="hidden lg:inline">My Profile & Resume</span>
+                <User className="w-4 h-4 shrink-0" />
+                <span>My Profile & ATS Resume</span>
               </Link>
             )}
 
             {user?.role === "alumni" && (
               <Link
                 to="/alumni?tab=search"
-                className="flex items-center space-x-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all"
+                className="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all"
               >
-                <Users className="w-5 h-5 shrink-0" />
-                <span className="hidden lg:inline">Student Directory</span>
+                <Users className="w-4 h-4 shrink-0" />
+                <span>Student Directory</span>
               </Link>
             )}
 
             {user?.role === "teacher" && (
               <Link
                 to="/teacher?tab=students"
-                className="flex items-center space-x-3 px-3 py-3 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all"
+                className="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all"
               >
-                <FileText className="w-5 h-5 shrink-0" />
-                <span className="hidden lg:inline">Student Roster</span>
+                <FileText className="w-4 h-4 shrink-0" />
+                <span>Student Roster</span>
               </Link>
             )}
           </nav>
@@ -113,13 +102,13 @@ export const AppLayout = ({ children, title = "Dashboard" }) => {
         {/* Sidebar Footer User Info & Sign Out */}
         {user && (
           <div className="pt-4 border-t border-slate-100 space-y-3">
-            <div className="hidden lg:flex items-center space-x-3 px-2">
-              <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-sm border border-blue-200">
+            <div className="flex items-center space-x-3 px-2">
+              <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs border border-blue-200 shrink-0">
                 {user.name?.[0] || "U"}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-slate-900 truncate">{user.name}</p>
-                <span className={`text-[10px] uppercase font-bold px-2 py-0.2 rounded border ${getRoleBadgeStyle(user.role)}`}>
+                <span className={`text-[9px] uppercase font-extrabold px-2 py-0.2 rounded border ${getRoleBadgeStyle(user.role)}`}>
                   {user.role}
                 </span>
               </div>
@@ -127,10 +116,10 @@ export const AppLayout = ({ children, title = "Dashboard" }) => {
 
             <button
               onClick={handleLogout}
-              className="w-full flex items-center justify-center lg:justify-start space-x-3 px-3 py-2.5 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition-all"
+              className="w-full flex items-center space-x-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition-all"
             >
               <LogOut className="w-4 h-4 shrink-0" />
-              <span className="hidden lg:inline">Sign Out</span>
+              <span>Sign Out</span>
             </button>
           </div>
         )}
@@ -139,12 +128,12 @@ export const AppLayout = ({ children, title = "Dashboard" }) => {
       {/* 2. Main Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
-        {/* Top Bar Header */}
+        {/* Top Header */}
         <header className="h-16 bg-white border-b border-slate-200/80 px-6 flex items-center justify-between z-20 shrink-0">
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">{title}</h1>
+          <h1 className="text-lg font-bold text-slate-900 tracking-tight">{title}</h1>
 
-          {/* Search Input Bar (Matching Image 1 header) */}
-          <div className="hidden md:flex items-center relative max-w-md w-full mx-8">
+          {/* Search Input Bar */}
+          <div className="hidden lg:flex items-center relative max-w-md w-full mx-6">
             <Search className="w-4 h-4 absolute left-3.5 text-slate-400" />
             <input
               type="text"
@@ -164,21 +153,21 @@ export const AppLayout = ({ children, title = "Dashboard" }) => {
               }`}
             >
               <Database className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{isFirebaseActive ? "Firebase Live" : "Demo Mode"}</span>
+              <span>{isFirebaseActive ? "Firebase Live" : "Demo Mode"}</span>
               <Info className="w-3 h-3 text-slate-400" />
             </button>
 
-            <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center cursor-pointer hover:bg-slate-200 transition-all">
+            <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center cursor-pointer hover:bg-slate-200 transition-all">
               <Bell className="w-4 h-4" />
             </div>
 
-            <div className="w-9 h-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs shadow-sm">
               {user?.name?.[0] || "U"}
             </div>
           </div>
         </header>
 
-        {/* Content View Scrollable Canvas */}
+        {/* Content View Canvas */}
         <main className="flex-1 overflow-y-auto p-6 bg-[#f4f6fa]">
           <div className="max-w-7xl mx-auto space-y-6">
             {children}
@@ -212,10 +201,6 @@ export const AppLayout = ({ children, title = "Dashboard" }) => {
                   ? "Connected live to Firebase. User accounts, posts, applications, and chat messages are synchronized with Cloud Firestore."
                   : "Operating cleanly using an in-memory & LocalStorage database with sample data so you can test all features immediately before putting in your Firebase keys!"}
               </p>
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 font-mono text-[11px] text-slate-700">
-                File: <code>.env.local</code><br />
-                Key: <code>REACT_APP_FIREBASE_API_KEY</code>
-              </div>
             </div>
 
             <button

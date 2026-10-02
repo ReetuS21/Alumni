@@ -1,7 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
-import { Navbar } from "./components/Navbar";
 import { AuthPage } from "./pages/AuthPage";
 import { StudentDashboard } from "./pages/StudentDashboard";
 import { TeacherDashboard } from "./pages/TeacherDashboard";
@@ -36,8 +35,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
-          <Navbar />
+        <div className="min-h-screen bg-[#f4f6fa] font-sans text-slate-900">
           <Routes>
             <Route path="/" element={<HomeRedirect />} />
             <Route path="/auth" element={<AuthPage />} />
