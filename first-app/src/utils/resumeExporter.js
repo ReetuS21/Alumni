@@ -1,15 +1,48 @@
 import jsPDF from "jspdf";
 
+const arrayBufferToBase64 = (buffer) => {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return window.btoa(binary);
+};
+
 /**
- * Generates an ATS-Friendly Single-Column PDF Resume.
- * Strictly avoids tables, multi-column layouts, graphics, or text frames
- * which cause ATS software to reject student applications.
+ * Generates an ATS-Friendly Single-Column PDF Resume rendered with the Open Sauce Sans font.
  */
-export const exportATSResume = (profile) => {
+export const exportATSResume = async (profile) => {
   const doc = new jsPDF({
     unit: "pt",
     format: "letter"
   });
+
+  let fontName = "helvetica";
+
+  try {
+    const regFontRes = await fetch('/fonts/OpenSauceSans-Regular.ttf');
+    const boldFontRes = await fetch('/fonts/OpenSauceSans-Bold.ttf');
+    
+    if (regFontRes.ok && boldFontRes.ok) {
+      const regBuffer = await regFontRes.arrayBuffer();
+      const boldBuffer = await boldFontRes.arrayBuffer();
+      
+      const regBase64 = arrayBufferToBase64(regBuffer);
+      const boldBase64 = arrayBufferToBase64(boldBuffer);
+      
+      doc.addFileToVFS('OpenSauceSans-Regular.ttf', regBase64);
+      doc.addFont('OpenSauceSans-Regular.ttf', 'OpenSauceSans', 'normal');
+      
+      doc.addFileToVFS('OpenSauceSans-Bold.ttf', boldBase64);
+      doc.addFont('OpenSauceSans-Bold.ttf', 'OpenSauceSans', 'bold');
+      
+      fontName = "OpenSauceSans";
+    }
+  } catch (e) {
+    console.warn("Falling back to standard font for PDF generation:", e);
+  }
 
   const margin = 40;
   let y = 50;
@@ -21,11 +54,11 @@ export const exportATSResume = (profile) => {
       doc.addPage();
       y = 50;
     }
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(13);
-    doc.setTextColor(30, 41, 59); // Dark blue gray
+    doc.setFont(fontName, "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(30, 41, 59); // Slate 800
     doc.text(text.toUpperCase(), margin, y);
-    y += 8;
+    y += 6;
     doc.setDrawColor(203, 213, 225);
     doc.setLineWidth(1);
     doc.line(margin, y, 570, y);
@@ -34,7 +67,7 @@ export const exportATSResume = (profile) => {
 
   const addBodyText = (text, isBold = false) => {
     if (!text) return;
-    doc.setFont("helvetica", isBold ? "bold" : "normal");
+    doc.setFont(fontName, isBold ? "bold" : "normal");
     doc.setFontSize(10);
     doc.setTextColor(51, 65, 85);
     
@@ -50,14 +83,14 @@ export const exportATSResume = (profile) => {
   };
 
   // Header - Name
-  doc.setFont("helvetica", "bold");
+  doc.setFont(fontName, "bold");
   doc.setFontSize(22);
   doc.setTextColor(15, 23, 42);
   doc.text(profile.name || "Student Name", margin, y);
   y += 24;
 
   // Contact / Designation Line
-  doc.setFont("helvetica", "normal");
+  doc.setFont(fontName, "normal");
   doc.setFontSize(10);
   doc.setTextColor(71, 85, 105);
   const contactParts = [
@@ -80,7 +113,7 @@ export const exportATSResume = (profile) => {
 
   // Skills
   if (profile.skills && profile.skills.length > 0) {
-    addHeading("Technical & Core Skills");
+    addHeading("Technical Skills");
     addBodyText(`Skills: ${profile.skills.join(", ")}`);
     if (profile.tools && profile.tools.length > 0) {
       addBodyText(`Tools & Technologies: ${Array.isArray(profile.tools) ? profile.tools.join(", ") : profile.tools}`);
@@ -113,15 +146,6 @@ export const exportATSResume = (profile) => {
   if (profile.languages) {
     const langs = Array.isArray(profile.languages) ? profile.languages.join(", ") : profile.languages;
     addBodyText(`Languages Known: ${langs}`);
-  }
-
-  // Verification Badge status
-  if (profile.verifiedBadge) {
-    y += 10;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.setTextColor(16, 185, 129); // Emerald green
-    doc.text("[ VERIFIED SKILL STATUS: AI-VERIFIED BY ALUMNI HUB ]", margin, y);
   }
 
   // Download PDF
