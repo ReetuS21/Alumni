@@ -1,9 +1,9 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
-// Firebase configuration using Create React App environment variables
+// Firebase configuration read from environment variables
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
   authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
@@ -13,12 +13,36 @@ const firebaseConfig = {
   appId: process.env.REACT_APP_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Check if Firebase is properly configured with non-placeholder keys
+export const isFirebaseConfigured = () => {
+  const key = process.env.REACT_APP_FIREBASE_API_KEY;
+  return (
+    key &&
+    key !== "your_api_key_here" &&
+    key !== "" &&
+    process.env.REACT_APP_FIREBASE_PROJECT_ID !== "your_project_id"
+  );
+};
 
-// Initialize Firebase services
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
+let app;
+let auth;
+let db;
+let storage;
 
+if (isFirebaseConfigured()) {
+  try {
+    if (!getApps().length) {
+      app = initializeApp(firebaseConfig);
+    } else {
+      app = getApps()[0];
+    }
+    auth = getAuth(app);
+    db = getFirestore(app);
+    storage = getStorage(app);
+  } catch (err) {
+    console.warn("Firebase initialization warning (falling back to mock mode):", err);
+  }
+}
+
+export { auth, db, storage };
 export default app;

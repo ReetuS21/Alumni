@@ -1,0 +1,130 @@
+import jsPDF from "jspdf";
+
+/**
+ * Generates an ATS-Friendly Single-Column PDF Resume.
+ * Strictly avoids tables, multi-column layouts, graphics, or text frames
+ * which cause ATS software to reject student applications.
+ */
+export const exportATSResume = (profile) => {
+  const doc = new jsPDF({
+    unit: "pt",
+    format: "letter"
+  });
+
+  const margin = 40;
+  let y = 50;
+  const pageHeight = doc.internal.pageSize.height;
+  const lineSpacing = 16;
+
+  const addHeading = (text) => {
+    if (y > pageHeight - 60) {
+      doc.addPage();
+      y = 50;
+    }
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor(30, 41, 59); // Dark blue gray
+    doc.text(text.toUpperCase(), margin, y);
+    y += 8;
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(1);
+    doc.line(margin, y, 570, y);
+    y += 16;
+  };
+
+  const addBodyText = (text, isBold = false) => {
+    if (!text) return;
+    doc.setFont("helvetica", isBold ? "bold" : "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(51, 65, 85);
+    
+    const lines = doc.splitTextToSize(text, 530);
+    lines.forEach(line => {
+      if (y > pageHeight - 50) {
+        doc.addPage();
+        y = 50;
+      }
+      doc.text(line, margin, y);
+      y += lineSpacing;
+    });
+  };
+
+  // Header - Name
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.setTextColor(15, 23, 42);
+  doc.text(profile.name || "Student Name", margin, y);
+  y += 24;
+
+  // Contact / Designation Line
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(71, 85, 105);
+  const contactParts = [
+    profile.designation,
+    profile.email,
+    profile.location,
+    profile.links?.linkedin,
+    profile.links?.portfolio
+  ].filter(Boolean);
+
+  addBodyText(contactParts.join(" | "));
+  y += 10;
+
+  // Professional Summary
+  if (profile.summary) {
+    addHeading("Professional Summary");
+    addBodyText(profile.summary);
+    y += 10;
+  }
+
+  // Skills
+  if (profile.skills && profile.skills.length > 0) {
+    addHeading("Technical & Core Skills");
+    addBodyText(`Skills: ${profile.skills.join(", ")}`);
+    if (profile.tools && profile.tools.length > 0) {
+      addBodyText(`Tools & Technologies: ${Array.isArray(profile.tools) ? profile.tools.join(", ") : profile.tools}`);
+    }
+    y += 10;
+  }
+
+  // Experience
+  if (profile.experience && profile.experience.length > 0) {
+    addHeading("Experience & Internships");
+    profile.experience.forEach(exp => {
+      addBodyText(`${exp.title} - ${exp.organization} (${exp.mode === "virtual" ? "Virtual Internship" : "Onsite"})`, true);
+      addBodyText(`Duration: ${exp.duration || "N/A"}`);
+      y += 4;
+    });
+    y += 10;
+  }
+
+  // Certifications
+  if (profile.certifications && profile.certifications.length > 0) {
+    addHeading("Certifications");
+    const certsText = Array.isArray(profile.certifications) ? profile.certifications.join("\n• ") : profile.certifications;
+    addBodyText(`• ${certsText}`);
+    y += 10;
+  }
+
+  // Languages & Education
+  addHeading("Education & Languages");
+  addBodyText("Degree: Master of Computer Applications (MCA)");
+  if (profile.languages) {
+    const langs = Array.isArray(profile.languages) ? profile.languages.join(", ") : profile.languages;
+    addBodyText(`Languages Known: ${langs}`);
+  }
+
+  // Verification Badge status
+  if (profile.verifiedBadge) {
+    y += 10;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(16, 185, 129); // Emerald green
+    doc.text("[ VERIFIED SKILL STATUS: AI-VERIFIED BY ALUMNI HUB ]", margin, y);
+  }
+
+  // Download PDF
+  const filename = `${(profile.name || "Resume").replace(/\s+/g, "_")}_ATS_Resume.pdf`;
+  doc.save(filename);
+};
