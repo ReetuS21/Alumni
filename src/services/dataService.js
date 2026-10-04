@@ -6,10 +6,8 @@ import {
   doc,
   getDoc,
   setDoc,
-  updateDoc,
   query,
   orderBy,
-  where,
   onSnapshot,
   serverTimestamp
 } from "firebase/firestore";

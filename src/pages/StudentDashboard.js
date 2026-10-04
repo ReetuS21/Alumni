@@ -15,13 +15,9 @@ import { useSearchParams } from "react-router-dom";
 import {
   Briefcase,
   FileText,
-  Search,
   CheckCircle,
   Download,
-  Building,
-  User,
-  Clock,
-  MoreVertical
+  Building
 } from "lucide-react";
 
 export const StudentDashboard = () => {
@@ -72,6 +68,7 @@ export const StudentDashboard = () => {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const loadData = async () => {

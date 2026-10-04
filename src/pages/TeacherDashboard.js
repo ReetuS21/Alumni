@@ -41,6 +41,7 @@ export const TeacherDashboard = () => {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const loadData = async () => {
@@ -154,6 +155,19 @@ export const TeacherDashboard = () => {
                 )}
 
                 <form onSubmit={handleCreatePost} className="space-y-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Post Type</label>
+                    <select
+                      value={postType}
+                      onChange={(e) => setPostType(e.target.value)}
+                      className="w-full p-2 bg-[#f4f6fa] border-none rounded-xl text-xs font-semibold text-slate-800"
+                    >
+                      <option value="notice">Department Notice</option>
+                      <option value="hiring">Hiring Opportunity</option>
+                      <option value="poll">Interactive Poll</option>
+                    </select>
+                  </div>
+
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 mb-1">Title</label>
                     <input

@@ -3,7 +3,6 @@ import { useAuth } from "../context/AuthContext";
 import { AppLayout } from "../components/AppLayout";
 import {
   getStudentProfiles,
-  getPosts,
   createPost,
   getApplications
 } from "../services/dataService";
@@ -23,7 +22,6 @@ export const AlumniDashboard = () => {
   const [activeTab, setActiveTab] = useState(initialTab);
 
   const [students, setStudents] = useState([]);
-  const [posts, setPosts] = useState([]);
   const [applications, setApplications] = useState([]);
 
   // Search & Filter State
@@ -43,14 +41,12 @@ export const AlumniDashboard = () => {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const loadData = async () => {
     const stList = await getStudentProfiles();
     setStudents(stList);
-
-    const pList = await getPosts();
-    setPosts(pList);
 
     const apps = await getApplications();
     setApplications(apps);
