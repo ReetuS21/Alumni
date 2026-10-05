@@ -12,9 +12,8 @@ React (Create React App) + Tailwind CSS + Firebase (Auth, Cloud Firestore, Stora
 | 1. Role-based auth | One register page with a Student / Teacher / Alumni toggle. The role is stored in `users/{uid}`; Firestore rules stop it from ever being changed by the client. Login routes each role to its own dashboard. |
 | 2. Global discussion | One real-time chat shared by all roles, with role badges, replies and delete-own-message. |
 | 3. Student dashboard | Live feed (hiring, tests, notices, polls), apply / submit solutions, poll voting, profile builder (skills, tools, onsite/virtual experience, education, certifications, languages, location, links, photo), one-click **ATS-friendly PDF resume**, alumni directory, application & referral tracking. |
-| 4. Teacher dashboard | Student / alumni counters, publish notices and polls, full student profiles with verification status, own short profile. |
-| 5. Alumni dashboard | Publish hiring posts and skill tests, review applicants (applied → shortlisted / rejected), search students by skills, tools, location and verification, shortlist and mark as referred. |
-| 6. Skill verification bridge | Fixed banner on the student dashboard linking to the AI Skill Verifier. Results written to `skillVerifications/{uid}` show up live as a **Verified** badge on profiles and in alumni search. |
+| 4. Teacher dashboard | Student / alumni counters, publish notices and polls, filter and export student profiles, alumni directory with counts per company and CSV export, own short profile. |
+| 5. Alumni dashboard | Publish hiring posts and skill tests, review applicants (applied → shortlisted / rejected), search students with simple filters (keyword, skill chips, location, internship experience), shortlist and mark as referred. |
 
 ## Setup
 
@@ -53,22 +52,10 @@ React (Create React App) + Tailwind CSS + Firebase (Auth, Cloud Firestore, Stora
 - In Firebase Console → Authentication → Settings → **Authorized domains**, add your `*.vercel.app` domain.
 - Without the Firebase variables the app shows a setup screen (there is no demo mode).
 
-## Skill verification (Module 6)
-
-The AI-Assisted Skill Verification Engine writes one document per student to `skillVerifications/{uid}`:
-
-```js
-{ uid, role: "student", status: "verified", score: 86, category, skills: [], verificationId, verifiedOn }
-```
-
-Client writes to this collection are blocked by the rules, so the engine must use the **Firebase Admin SDK**
-(or you can add a document by hand in the console for a demo). Set `REACT_APP_SKILL_VERIFIER_URL` to the
-engine's URL; the banner opens it with `?uid=<student uid>`.
-
 ## Firestore collections
 
 `users`, `studentProfiles`, `teacherProfiles`, `alumniProfiles`, `posts`, `applications` (id `postId_studentUid`),
-`pollVotes` (id `postId_uid`), `chatMessages`, `shortlists` (id `alumniUid_studentUid`), `skillVerifications`.
+`pollVotes` (id `postId_uid`), `chatMessages`, `shortlists` (id `alumniUid_studentUid`).
 
 ## Local development with emulators (optional)
 

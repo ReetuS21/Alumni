@@ -58,4 +58,3 @@ export const profileCompleteness = (p) => {
   return Math.round((checks.filter(Boolean).length / checks.length) * 100);
 };
 
-export const isVerified = (verification) => verification?.status === "verified";

@@ -22,7 +22,7 @@ const SHOW_TEST_ACCOUNTS = process.env.REACT_APP_SHOW_TEST_ACCOUNTS !== "false";
 const FEATURES = [
   { icon: MessagesSquare, text: "One live discussion space for students, teachers and alumni" },
   { icon: FileText, text: "Build your profile once and export an ATS-friendly resume" },
-  { icon: ShieldCheck, text: "Verified skills help alumni refer with confidence" },
+  { icon: ShieldCheck, text: "Alumni find juniors by skill and refer them directly" },
 ];
 
 export const AuthPage = () => {

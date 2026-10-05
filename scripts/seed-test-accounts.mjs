@@ -59,7 +59,7 @@ const ACCOUNTS = [
       {
         type: "notice",
         title: "Campus placement drive — update your profiles",
-        body: "All final-year MCA students: complete your Alumni Hub profile and verify your skills before Friday 5 PM. Recruiters and alumni will be shortlisting from the platform.",
+        body: "All final-year MCA students: complete your Alumni Hub profile before Friday 5 PM. Recruiters and alumni will be shortlisting from the platform.",
       },
       {
         type: "poll",
@@ -204,26 +204,6 @@ const run = async () => {
         sentAt: serverTimestamp(),
       });
       console.log("  ✓ sample discussion message added");
-    }
-
-    // The Verified badge is normally written by the AI Skill Verification Engine. Rules block client
-    // writes, so this only succeeds if the rules have not been deployed yet (test mode).
-    if (acc.role === "student") {
-      try {
-        await setDoc(doc(db, "skillVerifications", user.uid), {
-          uid: user.uid,
-          role: "student",
-          score: 86,
-          status: "verified",
-          category: "Full-Stack Web Development",
-          skills: ["React", "JavaScript", "Node.js"],
-          verificationId: "SAMPLE-0001",
-          verifiedOn: serverTimestamp(),
-        });
-        console.log("  ✓ sample skill verification added");
-      } catch {
-        console.log("  • skill verification not added (blocked by security rules — expected once rules are deployed)");
-      }
     }
 
     await signOut(auth);

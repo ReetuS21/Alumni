@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { collection, query } from "firebase/firestore";
 import { Building2, FileText, GraduationCap } from "lucide-react";
 import { db } from "../../firebase";
@@ -28,8 +29,12 @@ export const TeacherDashboard = () => {
       <PageHeader title="Teacher Dashboard" subtitle="Publish notices and polls, follow the discussion, and review student profiles." />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Registered students" value={counts.student} icon={GraduationCap} tone="blue" />
-        <StatCard label="Registered alumni" value={counts.alumni} icon={Building2} tone="violet" />
+        <Link to="/teacher/students" className="block rounded-2xl transition hover:-translate-y-0.5 hover:shadow-md">
+          <StatCard label="Registered students" value={counts.student} icon={GraduationCap} tone="blue" hint="View & export →" />
+        </Link>
+        <Link to="/teacher/alumni" className="block rounded-2xl transition hover:-translate-y-0.5 hover:shadow-md">
+          <StatCard label="Registered alumni" value={counts.alumni} icon={Building2} tone="violet" hint="View & export →" />
+        </Link>
         <StatCard label="My posts" value={myPosts} icon={FileText} tone="emerald" hint={`${posts.length} posts in total`} />
       </div>
 

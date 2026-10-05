@@ -1,57 +1,56 @@
-import React, { useState } from "react";
-import { Search, Users } from "lucide-react";
+import React from "react";
+import { Download, Users } from "lucide-react";
 import { useStudents } from "../../hooks/useDirectory";
-import { includesText } from "../../utils/format";
-import { isVerified } from "../../utils/profile";
+import { useStudentFilters } from "../../components/StudentFilters";
 import { StudentCard } from "../../components/StudentCard";
-import { Alert, EmptyState, FilterChips, PageHeader, Spinner } from "../../components/ui";
+import { downloadCsv } from "../../utils/csv";
+import { Alert, EmptyState, PageHeader, Spinner } from "../../components/ui";
 
-const FILTERS = [
-  { value: "all", label: "All students" },
-  { value: "verified", label: "Verified" },
-  { value: "unverified", label: "Not verified" },
-];
-
-/** Teacher view: every registered student, searchable, each card opens the full profile. */
+/** Teacher view: every registered student, filterable, each card opens the full profile. */
 export const StudentDirectory = () => {
   const { students, loading, error } = useStudents();
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("all");
+  const { filtered, ui, selectedSkills, search } = useStudentFilters(students);
 
-  const filtered = students.filter((s) => {
-    if (filter === "verified" && !isVerified(s.verification)) return false;
-    if (filter === "unverified" && isVerified(s.verification)) return false;
-    if (!search.trim()) return true;
-    return [s.name, s.email, s.designation, s.location, ...(s.skills || []), ...(s.tools || [])].some((f) => includesText(f, search));
-  });
+  const exportCsv = () =>
+    downloadCsv(
+      `students-${new Date().toISOString().slice(0, 10)}.csv`,
+      ["Name", "Email", "Designation", "Phone", "Location", "Skills", "Tools", "Internships", "Languages"],
+      filtered.map((s) => [
+        s.name,
+        s.email,
+        s.designation,
+        s.phone,
+        s.location,
+        (s.skills || []).join("; "),
+        (s.tools || []).join("; "),
+        (s.experience || []).map((e) => `${e.title} @ ${e.organization} (${e.mode})`).join("; "),
+        (s.languages || []).join("; "),
+      ])
+    );
 
   return (
     <>
-      <PageHeader title="Student Profiles" subtitle="Open any student's full profile, skills and verification status." />
-
-      <div className="card flex flex-col gap-3 p-4 md:flex-row md:items-center">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input className="input pl-9" placeholder="Search by name, skill, tool or city…" value={search} onChange={(e) => setSearch(e.target.value)} />
-        </div>
-        <FilterChips options={FILTERS} value={filter} onChange={setFilter} />
-      </div>
-
+      <PageHeader
+        title="Student Profiles"
+        subtitle={`${students.length} registered student${students.length === 1 ? "" : "s"}. Open any profile to see full details.`}
+        actions={
+          <button className="btn btn-secondary" onClick={exportCsv} disabled={!filtered.length}>
+            <Download className="h-4 w-4" /> Export CSV ({filtered.length})
+          </button>
+        }
+      />
+      {ui}
       {error && <Alert tone="error">Could not load students: {error.message}</Alert>}
-
       {loading ? (
         <Spinner label="Loading students…" />
       ) : filtered.length === 0 ? (
-        <EmptyState icon={Users} title="No students found" text={students.length ? "Try a different search." : "No students have registered yet."} />
+        <EmptyState icon={Users} title="No students found" text={students.length ? "Try removing a filter." : "No students have registered yet."} />
       ) : (
-        <>
-          <p className="text-sm text-slate-500">{filtered.length} student{filtered.length === 1 ? "" : "s"}</p>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((s) => (
-              <StudentCard key={s.uid} student={s} />
-            ))}
-          </div>
-        </>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((s) => (
+            <StudentCard key={s.uid} student={s} highlight={[...selectedSkills, search].filter(Boolean)} />
+          ))}
+        </div>
       )}
     </>
   );

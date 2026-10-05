@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { MapPin } from "lucide-react";
-import { Avatar, VerifiedBadge } from "./ui";
+import { Avatar } from "./ui";
 
 export const StudentCard = ({ student, actions, highlight = [] }) => {
   const skills = student.skills || [];
@@ -15,7 +15,6 @@ export const StudentCard = ({ student, actions, highlight = [] }) => {
             <Link to={`/students/${student.uid}`} className="truncate font-semibold text-slate-900 hover:text-blue-700">
               {student.name}
             </Link>
-            <VerifiedBadge verification={student.verification} />
           </div>
           <p className="truncate text-sm text-slate-500">{student.designation || "Student"}</p>
           {student.location && (

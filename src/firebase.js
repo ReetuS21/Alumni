@@ -35,7 +35,6 @@ if (isFirebaseConfigured) {
   }
 }
 
-export const SKILL_VERIFIER_URL = process.env.REACT_APP_SKILL_VERIFIER_URL || "";
 
 export { auth, db, storage };
 export default app;

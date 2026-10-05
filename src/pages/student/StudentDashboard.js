@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { collection, doc, query, where } from "firebase/firestore";
-import { BadgeCheck, Briefcase, Building2, ClipboardList, UserRound } from "lucide-react";
+import { Briefcase, Building2, ClipboardList, UserRound } from "lucide-react";
 import { db } from "../../firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useLiveDoc, useLiveQuery } from "../../hooks/useLive";
@@ -13,7 +13,6 @@ import { PageHeader, StatCard } from "../../components/ui";
 export const StudentDashboard = () => {
   const { user } = useAuth();
   const { data: profileDoc } = useLiveDoc(() => doc(db, "studentProfiles", user.uid), [user.uid]);
-  const { data: verification } = useLiveDoc(() => doc(db, "skillVerifications", user.uid), [user.uid]);
   const { data: apps } = useLiveQuery(() => query(collection(db, "applications"), where("studentUid", "==", user.uid)), [user.uid]);
   const { data: hiring } = useLiveQuery(() => query(collection(db, "posts"), where("type", "==", "hiring")), []);
   const { data: referrals } = useLiveQuery(() => query(collection(db, "shortlists"), where("studentUid", "==", user.uid)), [user.uid]);
@@ -29,7 +28,7 @@ export const StudentDashboard = () => {
         <StatCard label="Open positions" value={hiring.length} icon={Briefcase} tone="blue" />
         <StatCard label="My applications" value={apps.length} icon={ClipboardList} tone="violet" hint={`${apps.filter((a) => a.status === "shortlisted").length} shortlisted`} />
         <StatCard label="Alumni interest" value={referrals.length} icon={Building2} tone="amber" hint="shortlists & referrals" />
-        <StatCard label="Skill status" value={verification?.status === "verified" ? "Verified" : "Pending"} icon={BadgeCheck} tone={verification?.status === "verified" ? "emerald" : "rose"} />
+        <StatCard label="Profile strength" value={`${completeness}%`} icon={UserRound} tone={completeness >= 80 ? "emerald" : "rose"} hint="complete profiles get found more" />
       </div>
 
       {completeness < 80 && (

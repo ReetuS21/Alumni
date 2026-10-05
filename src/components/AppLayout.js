@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
+  Building2,
   ClipboardList,
   LayoutDashboard,
   LogOut,
@@ -15,7 +16,6 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Avatar, RoleBadge } from "./ui";
-import { VerifyBanner } from "./VerifyBanner";
 
 const NAV = {
   student: [
@@ -28,6 +28,7 @@ const NAV = {
   teacher: [
     { to: "/teacher", label: "Dashboard", icon: LayoutDashboard, end: true },
     { to: "/teacher/students", label: "Student Profiles", icon: Users },
+    { to: "/teacher/alumni", label: "Alumni", icon: Building2 },
     { to: "/discussion", label: "Discussion", icon: MessagesSquare },
     { to: "/teacher/profile", label: "My Profile", icon: UserRound },
   ],
@@ -137,7 +138,6 @@ export const AppLayout = () => {
       )}
 
       <div className="lg:pl-64">
-        {user?.role === "student" && <VerifyBanner />}
         <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           <Outlet />
         </main>

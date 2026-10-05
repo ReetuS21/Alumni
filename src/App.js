@@ -56,6 +56,7 @@ function App() {
               <Route element={<ProtectedRoute role="teacher" />}>
                 <Route path="/teacher" element={<TeacherDashboard />} />
                 <Route path="/teacher/students" element={<StudentDirectory />} />
+                <Route path="/teacher/alumni" element={<FindAlumni teacherView />} />
                 <Route path="/teacher/profile" element={<TeacherProfile />} />
               </Route>
 

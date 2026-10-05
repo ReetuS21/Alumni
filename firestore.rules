@@ -108,11 +108,5 @@ service cloud.firestore {
                     && request.resource.data.studentUid == resource.data.studentUid;
       allow delete: if signedIn() && resource.data.alumniUid == request.auth.uid;
     }
-
-    // ---- Skill verifications: written ONLY by the AI Skill Verification Engine (Admin SDK / console) ----
-    match /skillVerifications/{uid} {
-      allow read: if signedIn();
-      allow write: if false;
-    }
   }
 }

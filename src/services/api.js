@@ -93,7 +93,7 @@ export const deleteChatMessage = (id) => deleteDoc(doc(db, "chatMessages", id));
 const syncUserName = (uid, name) => (name ? updateDoc(doc(db, "users", uid), { name }) : Promise.resolve());
 
 export const saveStudentProfile = async (uid, profile) => {
-  const { verification, id, ...data } = profile;
+  const { id, ...data } = profile;
   await setDoc(doc(db, "studentProfiles", uid), { ...data, uid, updatedAt: serverTimestamp() }, { merge: true });
   await syncUserName(uid, data.name);
 };

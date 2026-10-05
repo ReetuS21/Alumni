@@ -6,7 +6,7 @@ import { normalizeStudentProfile } from "../utils/profile";
 const byName = (a, b) => (a.name || "").localeCompare(b.name || "");
 
 /**
- * Every registered student merged with their profile and skill verification record.
+ * Every registered student merged with their profile.
  * Firestore has no full-text search, so filtering is done client-side — fine at institute scale.
  */
 export const useStudents = () => {
@@ -15,13 +15,11 @@ export const useStudents = () => {
 
   const load = useCallback(async () => {
     try {
-      const [usersSnap, profilesSnap, verifSnap] = await Promise.all([
+      const [usersSnap, profilesSnap] = await Promise.all([
         getDocs(query(collection(db, "users"), where("role", "==", "student"))),
         getDocs(collection(db, "studentProfiles")),
-        getDocs(collection(db, "skillVerifications")),
       ]);
       const profiles = Object.fromEntries(profilesSnap.docs.map((d) => [d.id, d.data()]));
-      const verifications = Object.fromEntries(verifSnap.docs.map((d) => [d.id, d.data()]));
       const list = usersSnap.docs.map((d) => {
         const u = d.data();
         return {
@@ -29,7 +27,6 @@ export const useStudents = () => {
           uid: d.id,
           name: profiles[d.id]?.name || u.name,
           email: u.email,
-          verification: verifications[d.id] || null,
         };
       });
       setStudents(list.sort(byName));

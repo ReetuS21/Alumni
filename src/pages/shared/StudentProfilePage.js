@@ -18,17 +18,16 @@ export const StudentProfilePage = () => {
 
   const { data: account, loading: l1 } = useLiveDoc(() => doc(db, "users", uid), [uid]);
   const { data: profileDoc, loading: l2 } = useLiveDoc(() => doc(db, "studentProfiles", uid), [uid]);
-  const { data: verification, loading: l3 } = useLiveDoc(() => doc(db, "skillVerifications", uid), [uid]);
 
   const profile = useMemo(
     () =>
       account
-        ? { ...normalizeStudentProfile(profileDoc || {}), uid, name: profileDoc?.name || account.name, email: account.email, verification }
+        ? { ...normalizeStudentProfile(profileDoc || {}), uid, name: profileDoc?.name || account.name, email: account.email }
         : null,
-    [account, profileDoc, verification, uid]
+    [account, profileDoc, uid]
   );
 
-  if (l1 || l2 || l3) return <Spinner label="Loading profile…" />;
+  if (l1 || l2) return <Spinner label="Loading profile…" />;
 
   if (!profile || account.role !== "student") {
     return <EmptyState icon={UserX} title="Student not found" text="This profile does not exist or is not a student account." action={<Link to="/" className="btn btn-secondary">Back to dashboard</Link>} />;

@@ -1,7 +1,7 @@
 import React from "react";
-import { Award, BadgeCheck, Briefcase, ExternalLink, GraduationCap, Languages, Mail, MapPin, Phone, Wrench } from "lucide-react";
-import { formatDate, toUrl } from "../utils/format";
-import { Avatar, VerifiedBadge } from "./ui";
+import { Award, Briefcase, ExternalLink, GraduationCap, Languages, Mail, MapPin, Phone, Wrench } from "lucide-react";
+import { toUrl } from "../utils/format";
+import { Avatar } from "./ui";
 
 const Section = ({ icon: Icon, title, children }) => (
   <section className="card p-5">
@@ -30,7 +30,6 @@ const LINK_LABELS = { linkedin: "LinkedIn", github: "GitHub", portfolio: "Portfo
 /** Full read-only student profile (used by teachers, alumni and the student themself). */
 export const StudentProfileView = ({ profile, actions }) => {
   const p = profile;
-  const v = p.verification;
   const links = Object.entries(p.links || {}).filter(([, url]) => url);
 
   return (
@@ -42,7 +41,6 @@ export const StudentProfileView = ({ profile, actions }) => {
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl font-bold tracking-tight">{p.name}</h1>
-                <VerifiedBadge verification={v} showScore />
               </div>
               <p className="text-slate-600">{p.designation || "Student"}</p>
               <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
@@ -130,25 +128,6 @@ export const StudentProfileView = ({ profile, actions }) => {
       </div>
 
       <div className="space-y-6">
-        <section className={`card p-5 ${v?.status === "verified" ? "border-emerald-200 bg-emerald-50/50" : ""}`}>
-          <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
-            <BadgeCheck className="h-4 w-4" /> Skill verification
-          </h2>
-          {v?.status === "verified" ? (
-            <div className="space-y-1 text-sm">
-              <p className="text-3xl font-bold text-emerald-700">{v.score != null ? `${v.score}%` : "Verified"}</p>
-              {v.category && <p className="font-medium text-slate-700">{v.category}</p>}
-              {Array.isArray(v.skills) && v.skills.length > 0 && <Chips items={v.skills} tone="bg-emerald-100 text-emerald-800" />}
-              <p className="text-xs text-slate-500">
-                Verified {formatDate(v.verifiedOn)}
-                {v.verificationId ? ` · ID ${v.verificationId}` : ""}
-              </p>
-            </div>
-          ) : (
-            <p className="text-sm text-slate-500">Not verified yet by the AI Skill Verification Engine.</p>
-          )}
-        </section>
-
         <Section icon={Wrench} title="Skills">
           <Chips items={p.skills} tone="bg-blue-50 text-blue-700" />
         </Section>

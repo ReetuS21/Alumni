@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { AlertTriangle, BadgeCheck, CheckCircle2, Info, Loader2, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Info, Loader2, X } from "lucide-react";
 import { initials } from "../utils/format";
 
 export const Spinner = ({ label = "Loading…", full = false }) => (
@@ -117,16 +117,6 @@ const STATUS_STYLES = {
 export const StatusBadge = ({ status }) => (
   <span className={`badge capitalize ${STATUS_STYLES[status] || STATUS_STYLES.applied}`}>{status}</span>
 );
-
-export const VerifiedBadge = ({ verification, showScore = false }) => {
-  if (verification?.status !== "verified") return null;
-  return (
-    <span className="badge bg-emerald-50 text-emerald-700 ring-emerald-200" title="Skills verified by the AI Skill Verification Engine">
-      <BadgeCheck className="h-3 w-3" />
-      Verified{showScore && verification.score != null ? ` · ${verification.score}%` : ""}
-    </span>
-  );
-};
 
 export const Modal = ({ open, onClose, title, children, footer, wide = false }) => {
   useEffect(() => {
