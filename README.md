@@ -1,70 +1,80 @@
-# Getting Started with Create React App
+# Alumni Hub
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A role-based networking and referral platform for **students, teachers and alumni** (MCA project).
+React (Create React App) + Tailwind CSS + Firebase (Auth, Cloud Firestore, Storage), deployed on Vercel.
 
-## Available Scripts
+> "One campus, three roles, one conversation — and a profile that works as a resume."
 
-In the project directory, you can run:
+## Features
 
-### `npm start`
+| Module | What it does |
+|---|---|
+| 1. Role-based auth | One register page with a Student / Teacher / Alumni toggle. The role is stored in `users/{uid}`; Firestore rules stop it from ever being changed by the client. Login routes each role to its own dashboard. |
+| 2. Global discussion | One real-time chat shared by all roles, with role badges, replies and delete-own-message. |
+| 3. Student dashboard | Live feed (hiring, tests, notices, polls), apply / submit solutions, poll voting, profile builder (skills, tools, onsite/virtual experience, education, certifications, languages, location, links, photo), one-click **ATS-friendly PDF resume**, alumni directory, application & referral tracking. |
+| 4. Teacher dashboard | Student / alumni counters, publish notices and polls, full student profiles with verification status, own short profile. |
+| 5. Alumni dashboard | Publish hiring posts and skill tests, review applicants (applied → shortlisted / rejected), search students by skills, tools, location and verification, shortlist and mark as referred. |
+| 6. Skill verification bridge | Fixed banner on the student dashboard linking to the AI Skill Verifier. Results written to `skillVerifications/{uid}` show up live as a **Verified** badge on profiles and in alumni search. |
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Setup
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+1. **Firebase project** — in the [Firebase Console](https://console.firebase.google.com):
+   - add a **Web app** and copy its config
+   - Authentication → Sign-in method → enable **Email/Password**
+   - create a **Cloud Firestore** database
+   - (optional) enable **Storage** for profile photos
+2. **Keys** — copy `.env.example` to `.env` and fill in the `REACT_APP_FIREBASE_*` values.
+3. **Security rules** — deploy them (requires `npm i -g firebase-tools` and `firebase login`):
+   ```bash
+   firebase deploy --only firestore:rules,storage --project <your-project-id>
+   ```
+   Or paste `firestore.rules` into Console → Firestore → Rules.
+4. **Install & run**
+   ```bash
+   npm install
+   npm start
+   ```
+5. **Test accounts** — creates three logins plus sample posts and messages:
+   ```bash
+   npm run seed
+   ```
 
-### `npm test`
+   | Role | Email | Password |
+   |---|---|---|
+   | Student | student@gmail.com | alumni267 |
+   | Teacher | teacher@gmail.com | alumni267 |
+   | Alumni | alumni@gmail.com | alumni267 |
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+   The login page shows these as one-click shortcuts. Set `REACT_APP_SHOW_TEST_ACCOUNTS=false` to hide them.
 
-### `npm run build`
+## Deploying on Vercel
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- Add every `REACT_APP_*` variable from `.env` under **Project Settings → Environment Variables**, then redeploy.
+- In Firebase Console → Authentication → Settings → **Authorized domains**, add your `*.vercel.app` domain.
+- Without the Firebase variables the app shows a setup screen (there is no demo mode).
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Skill verification (Module 6)
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+The AI-Assisted Skill Verification Engine writes one document per student to `skillVerifications/{uid}`:
 
-### `npm run eject`
+```js
+{ uid, role: "student", status: "verified", score: 86, category, skills: [], verificationId, verifiedOn }
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Client writes to this collection are blocked by the rules, so the engine must use the **Firebase Admin SDK**
+(or you can add a document by hand in the console for a demo). Set `REACT_APP_SKILL_VERIFIER_URL` to the
+engine's URL; the banner opens it with `?uid=<student uid>`.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Firestore collections
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+`users`, `studentProfiles`, `teacherProfiles`, `alumniProfiles`, `posts`, `applications` (id `postId_studentUid`),
+`pollVotes` (id `postId_uid`), `chatMessages`, `shortlists` (id `alumniUid_studentUid`), `skillVerifications`.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Local development with emulators (optional)
 
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```bash
+firebase emulators:start --only auth,firestore --project demo-alumnihub   # needs Java 21+
+FIREBASE_EMULATOR=true npm run seed
+# .env: REACT_APP_USE_EMULATOR=true and REACT_APP_FIREBASE_PROJECT_ID=demo-alumnihub
+npm start
+```

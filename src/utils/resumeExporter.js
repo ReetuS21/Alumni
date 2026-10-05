@@ -1,154 +1,157 @@
 import jsPDF from "jspdf";
+import { normalizeStudentProfile } from "./profile";
 
 const arrayBufferToBase64 = (buffer) => {
-  let binary = '';
+  let binary = "";
   const bytes = new Uint8Array(buffer);
-  const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
+  for (let i = 0; i < bytes.byteLength; i += 1) binary += String.fromCharCode(bytes[i]);
   return window.btoa(binary);
 };
 
-/**
- * Generates an ATS-Friendly Single-Column PDF Resume rendered with the Open Sauce Sans font.
- */
-export const exportATSResume = async (profile) => {
-  const doc = new jsPDF({
-    unit: "pt",
-    format: "letter"
-  });
-
-  let fontName = "helvetica";
-
+const loadFonts = async (pdf) => {
   try {
-    const regFontRes = await fetch('/fonts/OpenSauceSans-Regular.ttf');
-    const boldFontRes = await fetch('/fonts/OpenSauceSans-Bold.ttf');
-    
-    if (regFontRes.ok && boldFontRes.ok) {
-      const regBuffer = await regFontRes.arrayBuffer();
-      const boldBuffer = await boldFontRes.arrayBuffer();
-      
-      const regBase64 = arrayBufferToBase64(regBuffer);
-      const boldBase64 = arrayBufferToBase64(boldBuffer);
-      
-      doc.addFileToVFS('OpenSauceSans-Regular.ttf', regBase64);
-      doc.addFont('OpenSauceSans-Regular.ttf', 'OpenSauceSans', 'normal');
-      
-      doc.addFileToVFS('OpenSauceSans-Bold.ttf', boldBase64);
-      doc.addFont('OpenSauceSans-Bold.ttf', 'OpenSauceSans', 'bold');
-      
-      fontName = "OpenSauceSans";
-    }
+    const base = process.env.PUBLIC_URL || "";
+    const [reg, bold] = await Promise.all([
+      fetch(`${base}/fonts/OpenSauceSans-Regular.ttf`),
+      fetch(`${base}/fonts/OpenSauceSans-Bold.ttf`),
+    ]);
+    if (!reg.ok || !bold.ok) return "helvetica";
+    pdf.addFileToVFS("OpenSauceSans-Regular.ttf", arrayBufferToBase64(await reg.arrayBuffer()));
+    pdf.addFont("OpenSauceSans-Regular.ttf", "OpenSauceSans", "normal");
+    pdf.addFileToVFS("OpenSauceSans-Bold.ttf", arrayBufferToBase64(await bold.arrayBuffer()));
+    pdf.addFont("OpenSauceSans-Bold.ttf", "OpenSauceSans", "bold");
+    return "OpenSauceSans";
   } catch (e) {
-    console.warn("Falling back to standard font for PDF generation:", e);
+    console.warn("Falling back to Helvetica for the resume PDF:", e);
+    return "helvetica";
   }
+};
 
-  const margin = 40;
-  let y = 50;
-  const pageHeight = doc.internal.pageSize.height;
-  const lineSpacing = 16;
+/**
+ * ATS-friendly resume export (Module 3).
+ * Single column, real selectable text, standard section headings.
+ * Deliberately no tables, columns, images, icons or text boxes — ATS parsers fail on those.
+ */
+export const exportATSResume = async (rawProfile) => {
+  const profile = normalizeStudentProfile(rawProfile);
+  const pdf = new jsPDF({ unit: "pt", format: "a4" });
+  const font = await loadFonts(pdf);
 
-  const addHeading = (text) => {
-    if (y > pageHeight - 60) {
-      doc.addPage();
-      y = 50;
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const margin = 50;
+  const maxWidth = pageWidth - margin * 2;
+  let y = margin + 6;
+
+  const ensureSpace = (needed) => {
+    if (y + needed > pageHeight - margin) {
+      pdf.addPage();
+      y = margin;
     }
-    doc.setFont(fontName, "bold");
-    doc.setFontSize(12);
-    doc.setTextColor(30, 41, 59); // Slate 800
-    doc.text(text.toUpperCase(), margin, y);
-    y += 6;
-    doc.setDrawColor(203, 213, 225);
-    doc.setLineWidth(1);
-    doc.line(margin, y, 570, y);
-    y += 16;
   };
 
-  const addBodyText = (text, isBold = false) => {
+  const write = (text, { size = 10.5, bold = false, gap = 3, color = 40 } = {}) => {
     if (!text) return;
-    doc.setFont(fontName, isBold ? "bold" : "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(51, 65, 85);
-    
-    const lines = doc.splitTextToSize(text, 530);
-    lines.forEach(line => {
-      if (y > pageHeight - 50) {
-        doc.addPage();
-        y = 50;
-      }
-      doc.text(line, margin, y);
-      y += lineSpacing;
+    pdf.setFont(font, bold ? "bold" : "normal");
+    pdf.setFontSize(size);
+    pdf.setTextColor(color, color, color);
+    const lineHeight = size * 1.4;
+    pdf.splitTextToSize(String(text), maxWidth).forEach((line) => {
+      ensureSpace(lineHeight);
+      pdf.text(line, margin, y);
+      y += lineHeight;
     });
+    y += gap;
   };
 
-  // Header - 1. Name
-  doc.setFont(fontName, "bold");
-  doc.setFontSize(22);
-  doc.setTextColor(15, 23, 42);
-  doc.text(profile.name || "Student Name", margin, y);
-  y += 24;
+  const heading = (title) => {
+    ensureSpace(40);
+    y += 10;
+    pdf.setFont(font, "bold");
+    pdf.setFontSize(11.5);
+    pdf.setTextColor(0, 0, 0);
+    pdf.text(title.toUpperCase(), margin, y);
+    y += 5;
+    pdf.setDrawColor(120, 120, 120);
+    pdf.setLineWidth(0.6);
+    pdf.line(margin, y, pageWidth - margin, y);
+    y += 15;
+  };
 
-  // Header - 2. Tagline / Designation & Contact Line
-  doc.setFont(fontName, "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(71, 85, 105);
-  const contactParts = [
-    profile.designation,
-    profile.email,
-    profile.location,
-    profile.links?.linkedin,
-    profile.links?.portfolio
-  ].filter(Boolean);
+  const clean = (arr) => (arr || []).map((s) => String(s).trim()).filter(Boolean);
 
-  addBodyText(contactParts.join(" | "));
-  y += 10;
+  // ---- Header ----
+  write(profile.name || "Your Name", { size: 20, bold: true, gap: 2, color: 0 });
+  if (profile.designation) write(profile.designation, { size: 11.5, gap: 3 });
+  write([profile.email, profile.phone, profile.location].filter(Boolean).join("  |  "), { size: 10, gap: 1 });
+  const { links } = profile;
+  [
+    links.linkedin && `LinkedIn: ${links.linkedin}`,
+    links.github && `GitHub: ${links.github}`,
+    links.portfolio && `Portfolio: ${links.portfolio}`,
+    links.other && `Other: ${links.other}`,
+  ]
+    .filter(Boolean)
+    .forEach((line) => write(line, { size: 10, gap: 0 }));
 
-  // 3. Professional Summary
+  // ---- Summary ----
   if (profile.summary) {
-    addHeading("Professional Summary");
-    addBodyText(profile.summary);
-    y += 10;
+    heading("Professional Summary");
+    write(profile.summary);
   }
 
-  // 4. Experience & Internships
-  if (profile.experience && profile.experience.length > 0) {
-    addHeading("Experience & Internships");
-    profile.experience.forEach(exp => {
-      addBodyText(`${exp.title} - ${exp.organization}`, true);
-      addBodyText(`Duration: ${exp.duration || "N/A"}`);
-      y += 4;
+  // ---- Skills ----
+  const skills = clean(profile.skills);
+  const tools = clean(profile.tools);
+  if (skills.length || tools.length) {
+    heading("Skills");
+    if (skills.length) write(`Technical Skills: ${skills.join(", ")}`);
+    if (tools.length) write(`Tools and Technologies: ${tools.join(", ")}`);
+  }
+
+  // ---- Experience ----
+  const experience = profile.experience.filter((e) => e.title || e.organization);
+  if (experience.length) {
+    heading("Experience");
+    experience.forEach((e) => {
+      write([e.title, e.organization].filter(Boolean).join(", "), { bold: true, gap: 0, color: 0 });
+      const mode = e.mode === "virtual" ? "Virtual Internship" : "Onsite Internship";
+      const dates = [e.startDate, e.endDate].filter(Boolean).join(" to ");
+      write([mode, dates].filter(Boolean).join("  |  "), { size: 10, gap: 2, color: 70 });
+      (e.description || "")
+        .split("\n")
+        .map((l) => l.trim().replace(/^[-•*]\s*/, ""))
+        .filter(Boolean)
+        .forEach((l) => write(`- ${l}`, { gap: 0 }));
+      y += 6;
     });
-    y += 10;
   }
 
-  // 5. Certifications
-  if (profile.certifications && profile.certifications.length > 0) {
-    addHeading("Certifications");
-    const certsText = Array.isArray(profile.certifications) ? profile.certifications.join("\n• ") : profile.certifications;
-    addBodyText(`• ${certsText}`);
-    y += 10;
+  // ---- Education ----
+  const education = profile.education.filter((e) => e.degree || e.institution);
+  if (education.length) {
+    heading("Education");
+    education.forEach((e) => {
+      write([e.degree, e.institution].filter(Boolean).join(", "), { bold: true, gap: 0, color: 0 });
+      write([e.year, e.score && `Score: ${e.score}`].filter(Boolean).join("  |  "), { size: 10, gap: 6, color: 70 });
+    });
   }
 
-  // 6. Skills
-  if (profile.skills && profile.skills.length > 0) {
-    addHeading("Technical Skills");
-    addBodyText(`Skills: ${profile.skills.join(", ")}`);
-    if (profile.tools && profile.tools.length > 0) {
-      addBodyText(`Tools & Technologies: ${Array.isArray(profile.tools) ? profile.tools.join(", ") : profile.tools}`);
-    }
-    y += 10;
+  // ---- Certifications ----
+  const certs = profile.certifications.filter((c) => c.name);
+  if (certs.length) {
+    heading("Certifications");
+    certs.forEach((c) => write(`- ${[c.name, c.issuer, c.year].filter(Boolean).join(", ")}`, { gap: 0 }));
+    y += 3;
   }
 
-  // 7. Languages Known
-  addHeading("Languages & Education");
-  addBodyText("Degree: Master of Computer Applications (MCA)");
-  if (profile.languages) {
-    const langs = Array.isArray(profile.languages) ? profile.languages.join(", ") : profile.languages;
-    addBodyText(`Languages Known: ${langs}`);
+  // ---- Languages ----
+  const languages = clean(profile.languages);
+  if (languages.length) {
+    heading("Languages");
+    write(languages.join(", "));
   }
 
-  // Download PDF
-  const filename = `${(profile.name || "Resume").replace(/\s+/g, "_")}_ATS_Resume.pdf`;
-  doc.save(filename);
+  pdf.setProperties({ title: `${profile.name || "Resume"} - Resume`, author: profile.name || "" });
+  pdf.save(`${(profile.name || "Resume").replace(/[^a-z0-9]+/gi, "_")}_Resume.pdf`);
 };

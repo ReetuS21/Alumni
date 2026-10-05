@@ -21,3 +21,12 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# local environment (Firebase keys)
+.env
+
+# firebase cli
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log

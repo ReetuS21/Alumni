@@ -1,0 +1,118 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+    function userRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    function isRole(r) { return signedIn() && userRole() == r; }
+    function onlyChanged(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+
+    // ---- Users: the role is set once at registration and can never be changed from the client ----
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create: if isOwner(uid)
+                    && request.resource.data.uid == uid
+                    && request.resource.data.role in ['student', 'teacher', 'alumni'];
+      allow update: if isOwner(uid) && request.resource.data.role == resource.data.role;
+      allow delete: if false;
+    }
+
+    // ---- Role profiles ----
+    match /studentProfiles/{uid} {
+      allow read: if signedIn();
+      allow write: if isOwner(uid) && isRole('student');
+    }
+    match /teacherProfiles/{uid} {
+      allow read: if signedIn();
+      allow write: if isOwner(uid) && isRole('teacher');
+    }
+    match /alumniProfiles/{uid} {
+      allow read: if signedIn();
+      allow write: if isOwner(uid) && isRole('alumni');
+    }
+
+    // ---- Posts: teachers publish notices / polls, alumni publish hiring posts / tests ----
+    match /posts/{postId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+                    && request.resource.data.authorUid == request.auth.uid
+                    && request.resource.data.authorRole == userRole()
+                    && ((userRole() == 'teacher' && request.resource.data.type in ['notice', 'poll'])
+                        || (userRole() == 'alumni' && request.resource.data.type in ['hiring', 'test']));
+      allow update: if signedIn() && resource.data.authorUid == request.auth.uid
+                    && request.resource.data.type == resource.data.type
+                    && request.resource.data.authorUid == resource.data.authorUid;
+      allow delete: if signedIn() && resource.data.authorUid == request.auth.uid;
+    }
+
+    // ---- Applications (doc id = postId_studentUid): students apply, the post author manages status ----
+    match /applications/{applicationId} {
+      allow read: if signedIn()
+                  && (resource.data.studentUid == request.auth.uid
+                      || resource.data.postAuthorUid == request.auth.uid
+                      || isRole('teacher'));
+      allow create: if isRole('student')
+                    && applicationId == request.resource.data.postId + '_' + request.auth.uid
+                    && request.resource.data.studentUid == request.auth.uid
+                    && request.resource.data.status == 'applied'
+                    && request.resource.data.postAuthorUid ==
+                       get(/databases/$(database)/documents/posts/$(request.resource.data.postId)).data.authorUid;
+      allow update: if signedIn()
+                    && resource.data.postAuthorUid == request.auth.uid
+                    && onlyChanged(['status', 'updatedAt'])
+                    && request.resource.data.status in ['applied', 'shortlisted', 'rejected'];
+      allow delete: if signedIn() && resource.data.studentUid == request.auth.uid;
+    }
+
+    // ---- Poll votes: one vote per user per poll (doc id = postId_uid) ----
+    match /pollVotes/{voteId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+                    && request.resource.data.uid == request.auth.uid
+                    && voteId == request.resource.data.postId + '_' + request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // ---- Global discussion box ----
+    match /chatMessages/{messageId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+                    && request.resource.data.senderUid == request.auth.uid
+                    && request.resource.data.senderRole == userRole()
+                    && request.resource.data.text is string
+                    && request.resource.data.text.size() > 0
+                    && request.resource.data.text.size() <= 1000;
+      allow update: if false;
+      allow delete: if signedIn() && resource.data.senderUid == request.auth.uid;
+    }
+
+    // ---- Alumni shortlists / referrals (doc id = alumniUid_studentUid) ----
+    match /shortlists/{shortlistId} {
+      // get: the alumnus may check their own entry even before it exists (the id starts with their uid)
+      allow get: if signedIn()
+                 && (shortlistId.split('_')[0] == request.auth.uid
+                     || resource.data.studentUid == request.auth.uid);
+      allow list: if signedIn()
+                  && (resource.data.alumniUid == request.auth.uid
+                      || resource.data.studentUid == request.auth.uid);
+      allow create: if isRole('alumni')
+                    && request.resource.data.alumniUid == request.auth.uid
+                    && shortlistId == request.auth.uid + '_' + request.resource.data.studentUid;
+      allow update: if signedIn() && resource.data.alumniUid == request.auth.uid
+                    && request.resource.data.alumniUid == resource.data.alumniUid
+                    && request.resource.data.studentUid == resource.data.studentUid;
+      allow delete: if signedIn() && resource.data.alumniUid == request.auth.uid;
+    }
+
+    // ---- Skill verifications: written ONLY by the AI Skill Verification Engine (Admin SDK / console) ----
+    match /skillVerifications/{uid} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+  }
+}

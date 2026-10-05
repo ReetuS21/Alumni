@@ -1,9 +1,9 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { connectAuthEmulator, getAuth } from "firebase/auth";
+import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
-// Firebase configuration read from environment variables
+// All keys come from environment variables (.env locally, Project Settings → Environment Variables on Vercel).
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
   authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
@@ -13,36 +13,29 @@ const firebaseConfig = {
   appId: process.env.REACT_APP_FIREBASE_APP_ID,
 };
 
-// Check if Firebase is properly configured with non-placeholder keys
-export const isFirebaseConfigured = () => {
-  const key = process.env.REACT_APP_FIREBASE_API_KEY;
-  return (
-    key &&
-    key !== "your_api_key_here" &&
-    key !== "" &&
-    process.env.REACT_APP_FIREBASE_PROJECT_ID !== "your_project_id"
-  );
-};
+const isPlaceholder = (v) => !v || /^your_|^YOUR_/.test(v);
 
-let app;
-let auth;
-let db;
-let storage;
+export const isFirebaseConfigured = !isPlaceholder(firebaseConfig.apiKey) && !isPlaceholder(firebaseConfig.projectId);
 
-if (isFirebaseConfigured()) {
-  try {
-    if (!getApps().length) {
-      app = initializeApp(firebaseConfig);
-    } else {
-      app = getApps()[0];
-    }
-    auth = getAuth(app);
-    db = getFirestore(app);
-    storage = getStorage(app);
-  } catch (err) {
-    console.warn("Firebase initialization warning (falling back to mock mode):", err);
+let app = null;
+let auth = null;
+let db = null;
+let storage = null;
+
+if (isFirebaseConfigured) {
+  app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  storage = getStorage(app);
+
+  // Local development against `firebase emulators:start` (set REACT_APP_USE_EMULATOR=true in .env).
+  if (process.env.REACT_APP_USE_EMULATOR === "true") {
+    connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+    connectFirestoreEmulator(db, "127.0.0.1", 8080);
   }
 }
+
+export const SKILL_VERIFIER_URL = process.env.REACT_APP_SKILL_VERIFIER_URL || "";
 
 export { auth, db, storage };
 export default app;

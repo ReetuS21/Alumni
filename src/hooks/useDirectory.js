@@ -1,0 +1,86 @@
+import { useCallback, useEffect, useState } from "react";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "../firebase";
+import { normalizeStudentProfile } from "../utils/profile";
+
+const byName = (a, b) => (a.name || "").localeCompare(b.name || "");
+
+/**
+ * Every registered student merged with their profile and skill verification record.
+ * Firestore has no full-text search, so filtering is done client-side — fine at institute scale.
+ */
+export const useStudents = () => {
+  const [students, setStudents] = useState(null);
+  const [error, setError] = useState(null);
+
+  const load = useCallback(async () => {
+    try {
+      const [usersSnap, profilesSnap, verifSnap] = await Promise.all([
+        getDocs(query(collection(db, "users"), where("role", "==", "student"))),
+        getDocs(collection(db, "studentProfiles")),
+        getDocs(collection(db, "skillVerifications")),
+      ]);
+      const profiles = Object.fromEntries(profilesSnap.docs.map((d) => [d.id, d.data()]));
+      const verifications = Object.fromEntries(verifSnap.docs.map((d) => [d.id, d.data()]));
+      const list = usersSnap.docs.map((d) => {
+        const u = d.data();
+        return {
+          ...normalizeStudentProfile(profiles[d.id] || {}),
+          uid: d.id,
+          name: profiles[d.id]?.name || u.name,
+          email: u.email,
+          verification: verifications[d.id] || null,
+        };
+      });
+      setStudents(list.sort(byName));
+      setError(null);
+    } catch (e) {
+      console.error(e);
+      setError(e);
+      setStudents([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  return { students: students || [], loading: students === null, error, reload: load };
+};
+
+/** Every registered alumnus merged with their alumni profile. */
+export const useAlumni = () => {
+  const [alumni, setAlumni] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [usersSnap, profilesSnap] = await Promise.all([
+          getDocs(query(collection(db, "users"), where("role", "==", "alumni"))),
+          getDocs(collection(db, "alumniProfiles")),
+        ]);
+        const profiles = Object.fromEntries(profilesSnap.docs.map((d) => [d.id, d.data()]));
+        const list = usersSnap.docs.map((d) => ({
+          ...(profiles[d.id] || {}),
+          uid: d.id,
+          name: profiles[d.id]?.name || d.data().name,
+          email: d.data().email,
+        }));
+        if (!cancelled) setAlumni(list.sort(byName));
+      } catch (e) {
+        console.error(e);
+        if (!cancelled) {
+          setError(e);
+          setAlumni([]);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return { alumni: alumni || [], loading: alumni === null, error };
+};

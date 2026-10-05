@@ -1,73 +1,77 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "./context/AuthContext";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { AuthProvider, dashboardPath, useAuth } from "./context/AuthContext";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AppLayout } from "./components/AppLayout";
+import { Spinner } from "./components/ui";
+
 import { AuthPage } from "./pages/AuthPage";
-import { StudentDashboard } from "./pages/StudentDashboard";
-import { TeacherDashboard } from "./pages/TeacherDashboard";
-import { AlumniDashboard } from "./pages/AlumniDashboard";
+import { NotFound } from "./pages/NotFound";
+import { DiscussionPage } from "./pages/shared/DiscussionPage";
+import { StudentProfilePage } from "./pages/shared/StudentProfilePage";
 
-// Role Protected Route Component
-const ProtectedRoute = ({ children, allowedRole }) => {
-  const { user } = useAuth();
+import { StudentDashboard } from "./pages/student/StudentDashboard";
+import { ProfileBuilder } from "./pages/student/ProfileBuilder";
+import { FindAlumni } from "./pages/student/FindAlumni";
+import { MyApplications } from "./pages/student/MyApplications";
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
+import { TeacherDashboard } from "./pages/teacher/TeacherDashboard";
+import { StudentDirectory } from "./pages/teacher/StudentDirectory";
+import { TeacherProfile } from "./pages/teacher/TeacherProfile";
 
-  // If role is specified and user role doesn't match, route to user's matching dashboard
-  if (allowedRole && user.role !== allowedRole) {
-    return <Navigate to={`/${user.role}`} replace />;
-  }
+import { AlumniDashboard } from "./pages/alumni/AlumniDashboard";
+import { SearchStudents } from "./pages/alumni/SearchStudents";
+import { Shortlist } from "./pages/alumni/Shortlist";
+import { AlumniProfile } from "./pages/alumni/AlumniProfile";
 
-  return children;
-};
-
-// Home Redirect Component
 const HomeRedirect = () => {
-  const { user } = useAuth();
-  if (user) {
-    return <Navigate to={`/${user.role}`} replace />;
-  }
-  return <Navigate to="/auth" replace />;
+  const { authUser, user, loading } = useAuth();
+  if (loading) return <Spinner full />;
+  if (!authUser) return <Navigate to="/auth" replace />;
+  return <Navigate to={dashboardPath(user?.role)} replace />;
 };
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <div className="min-h-screen bg-[#f4f6fa] font-sans text-slate-900">
-          <Routes>
-            <Route path="/" element={<HomeRedirect />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route
-              path="/student"
-              element={
-                <ProtectedRoute allowedRole="student">
-                  <StudentDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/teacher"
-              element={
-                <ProtectedRoute allowedRole="teacher">
-                  <TeacherDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/alumni"
-              element={
-                <ProtectedRoute allowedRole="alumni">
-                  <AlumniDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </div>
-      </Router>
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<HomeRedirect />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/login" element={<Navigate to="/auth" replace />} />
+
+          <Route element={<ProtectedRoute />}>
+            <Route element={<AppLayout />}>
+              {/* Shared by every role */}
+              <Route path="/discussion" element={<DiscussionPage />} />
+              <Route path="/students/:uid" element={<StudentProfilePage />} />
+
+              <Route element={<ProtectedRoute role="student" />}>
+                <Route path="/student" element={<StudentDashboard />} />
+                <Route path="/student/profile" element={<ProfileBuilder />} />
+                <Route path="/student/alumni" element={<FindAlumni />} />
+                <Route path="/student/applications" element={<MyApplications />} />
+              </Route>
+
+              <Route element={<ProtectedRoute role="teacher" />}>
+                <Route path="/teacher" element={<TeacherDashboard />} />
+                <Route path="/teacher/students" element={<StudentDirectory />} />
+                <Route path="/teacher/profile" element={<TeacherProfile />} />
+              </Route>
+
+              <Route element={<ProtectedRoute role="alumni" />}>
+                <Route path="/alumni" element={<AlumniDashboard />} />
+                <Route path="/alumni/search" element={<SearchStudents />} />
+                <Route path="/alumni/shortlist" element={<Shortlist />} />
+                <Route path="/alumni/profile" element={<AlumniProfile />} />
+              </Route>
+            </Route>
+          </Route>
+
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 

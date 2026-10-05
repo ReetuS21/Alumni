@@ -1,204 +1,206 @@
 import React, { useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { User, Lock, Mail, ArrowRight, Database } from "lucide-react";
+import { Navigate, useNavigate } from "react-router-dom";
+import { ArrowRight, BookOpen, Briefcase, GraduationCap, MessagesSquare, ShieldCheck, FileText } from "lucide-react";
+import { dashboardPath, useAuth } from "../context/AuthContext";
+import { friendlyError } from "../utils/authErrors";
+import { Alert, Field, SegmentedControl, Spinner } from "../components/ui";
+
+const ROLE_OPTIONS = [
+  { value: "student", label: "Student", icon: GraduationCap },
+  { value: "teacher", label: "Teacher", icon: BookOpen },
+  { value: "alumni", label: "Alumni", icon: Briefcase },
+];
+
+const TEST_PASSWORD = "alumni267";
+const TEST_ACCOUNTS = [
+  { role: "Student", email: "student@gmail.com" },
+  { role: "Teacher", email: "teacher@gmail.com" },
+  { role: "Alumni", email: "alumni@gmail.com" },
+];
+const SHOW_TEST_ACCOUNTS = process.env.REACT_APP_SHOW_TEST_ACCOUNTS !== "false";
+
+const FEATURES = [
+  { icon: MessagesSquare, text: "One live discussion space for students, teachers and alumni" },
+  { icon: FileText, text: "Build your profile once and export an ATS-friendly resume" },
+  { icon: ShieldCheck, text: "Verified skills help alumni refer with confidence" },
+];
 
 export const AuthPage = () => {
-  const { login, register, demoLogin, isFirebaseActive } = useAuth();
+  const { authUser, user, loading, login, register } = useAuth();
   const navigate = useNavigate();
 
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [selectedRole, setSelectedRole] = useState("student");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [mode, setMode] = useState("signin");
+  const [role, setRole] = useState("student");
+  const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "", department: "", designation: "", company: "", jobRole: "", batch: "" });
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  if (loading) return <Spinner full />;
+  if (authUser && user) return <Navigate to={dashboardPath(user.role)} replace />;
+
+  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  const isSignUp = mode === "signup";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
-
+    if (isSignUp && form.password !== form.confirm) {
+      setError("Passwords do not match.");
+      return;
+    }
+    setBusy(true);
     try {
+      let userRole;
       if (isSignUp) {
-        await register(email, password, name, selectedRole);
+        userRole = await register({
+          name: form.name.trim(),
+          email: form.email.trim(),
+          password: form.password,
+          role,
+          extra: { department: form.department.trim(), designation: form.designation.trim(), company: form.company.trim(), jobRole: form.jobRole.trim(), batch: form.batch.trim() },
+        });
       } else {
-        await login(email, password, selectedRole);
+        userRole = await login(form.email.trim(), form.password);
+        if (!userRole) throw new Error("This account has no Alumni Hub role. Please register first.");
       }
-      navigate(`/${selectedRole}`);
+      navigate(dashboardPath(userRole), { replace: true });
     } catch (err) {
-      setError(err.message || "Authentication failed.");
+      setError(friendlyError(err));
     } finally {
-      setLoading(false);
+      setBusy(false);
     }
   };
 
-  const handleInstantDemo = (role) => {
-    demoLogin(role);
-    navigate(`/${role}`);
+  const fillTestAccount = (email) => {
+    setMode("signin");
+    setError("");
+    setForm((f) => ({ ...f, email, password: TEST_PASSWORD }));
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f6fa] flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-[24px] p-8 shadow-xl border border-slate-200/80">
-        
-        {/* Header Logo */}
-        <div className="text-center mb-6">
-          <img 
-            src={process.env.PUBLIC_URL + "/alumnihublogo.png"} 
-            alt="Alumni Hub Logo" 
-            className="w-14 h-14 rounded-2xl shadow-md object-cover mx-auto mb-3 overflow-hidden" 
-          />
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Alumni Hub</h1>
-          <p className="text-xs text-slate-400 mt-1 font-medium">Role-Based Networking Platform</p>
+    <div className="grid min-h-screen lg:grid-cols-2">
+      {/* Brand panel */}
+      <div className="relative hidden overflow-hidden bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 p-12 text-white lg:flex lg:flex-col lg:justify-between">
+        <div className="flex items-center gap-3">
+          <img src={`${process.env.PUBLIC_URL}/alumnihublogo.png`} alt="" className="h-11 w-11 rounded-xl bg-white/10 object-cover" />
+          <span className="text-xl font-bold">Alumni Hub</span>
         </div>
-
-        {/* 3-Way Role Selector */}
-        <div className="bg-[#f4f6fa] p-1.5 rounded-2xl mb-6 flex space-x-1">
-          <button
-            type="button"
-            onClick={() => setSelectedRole("student")}
-            className={`flex-1 text-xs font-bold py-2.5 rounded-xl transition-all ${
-              selectedRole === "student"
-                ? "bg-white text-blue-600 shadow-xs"
-                : "text-slate-500 hover:text-slate-900"
-            }`}
-          >
-            Student
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedRole("teacher")}
-            className={`flex-1 text-xs font-bold py-2.5 rounded-xl transition-all ${
-              selectedRole === "teacher"
-                ? "bg-white text-blue-600 shadow-xs"
-                : "text-slate-500 hover:text-slate-900"
-            }`}
-          >
-            Teacher
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedRole("alumni")}
-            className={`flex-1 text-xs font-bold py-2.5 rounded-xl transition-all ${
-              selectedRole === "alumni"
-                ? "bg-white text-blue-600 shadow-xs"
-                : "text-slate-500 hover:text-slate-900"
-            }`}
-          >
-            Alumni
-          </button>
+        <div className="max-w-md space-y-8">
+          <h1 className="text-4xl font-bold leading-tight text-white">One campus, three roles, one conversation.</h1>
+          <p className="text-lg text-blue-100">A profile that works as a resume, and a network that turns into referrals.</p>
+          <ul className="space-y-4">
+            {FEATURES.map(({ icon: Icon, text }) => (
+              <li key={text} className="flex items-start gap-3 text-blue-50">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/15">
+                  <Icon className="h-4 w-4" />
+                </span>
+                <span className="pt-1 text-sm">{text}</span>
+              </li>
+            ))}
+          </ul>
         </div>
+        <p className="text-xs text-blue-200">MCA Project · Role-Based Networking and Referral Platform</p>
+      </div>
 
-        {!isFirebaseActive && (
-          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center space-x-2">
-            <Database className="w-4 h-4 text-amber-600 shrink-0" />
-            <span><strong>Demo Mode Active:</strong> Use 1-click preview buttons below to explore instant accounts!</span>
+      {/* Form panel */}
+      <div className="flex items-center justify-center bg-slate-50 px-4 py-10 sm:px-8">
+        <div className="w-full max-w-md">
+          <div className="mb-8 flex items-center gap-3 lg:hidden">
+            <img src={`${process.env.PUBLIC_URL}/alumnihublogo.png`} alt="" className="h-10 w-10 rounded-xl" />
+            <span className="text-xl font-bold">Alumni Hub</span>
           </div>
-        )}
 
-        {error && (
-          <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs font-semibold">
-            {error}
-          </div>
-        )}
+          <h2 className="text-2xl font-bold tracking-tight">{isSignUp ? "Create your account" : "Welcome back"}</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            {isSignUp ? "Choose your role — you'll get a dashboard built for it." : "Sign in to continue to your dashboard."}
+          </p>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {isSignUp && (
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Full Name</label>
-              <div className="relative">
-                <User className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Full name"
-                  className="w-full pl-9 pr-4 py-2.5 bg-[#f4f6fa] text-slate-900 text-xs rounded-xl border-none focus:outline-none"
-                />
+          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            {isSignUp && (
+              <>
+                <SegmentedControl options={ROLE_OPTIONS} value={role} onChange={setRole} />
+                <Field label="Full name">
+                  <input required className="input" autoComplete="name" value={form.name} onChange={set("name")} />
+                </Field>
+              </>
+            )}
+
+            <Field label="Email">
+              <input required type="email" className="input" autoComplete="email" value={form.email} onChange={set("email")} placeholder="you@example.com" />
+            </Field>
+            <Field label="Password">
+              <input required type="password" minLength={6} className="input" autoComplete={isSignUp ? "new-password" : "current-password"} value={form.password} onChange={set("password")} />
+            </Field>
+
+            {isSignUp && (
+              <Field label="Confirm password">
+                <input required type="password" minLength={6} className="input" autoComplete="new-password" value={form.confirm} onChange={set("confirm")} />
+              </Field>
+            )}
+
+            {isSignUp && role === "teacher" && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Department">
+                  <input required className="input" value={form.department} onChange={set("department")} placeholder="Computer Applications" />
+                </Field>
+                <Field label="Designation">
+                  <input required className="input" value={form.designation} onChange={set("designation")} placeholder="Assistant Professor" />
+                </Field>
+              </div>
+            )}
+            {isSignUp && role === "alumni" && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Current company">
+                  <input required className="input" value={form.company} onChange={set("company")} />
+                </Field>
+                <Field label="Job role">
+                  <input required className="input" value={form.jobRole} onChange={set("jobRole")} />
+                </Field>
+                <Field label="Graduation batch" className="sm:col-span-2">
+                  <input className="input" value={form.batch} onChange={set("batch")} placeholder="e.g. MCA 2021" />
+                </Field>
+              </div>
+            )}
+
+            <Alert tone="error">{error}</Alert>
+
+            <button type="submit" disabled={busy} className="btn btn-primary w-full py-2.5">
+              {busy ? "Please wait…" : isSignUp ? `Create ${role} account` : "Sign in"}
+              {!busy && <ArrowRight className="h-4 w-4" />}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-slate-500">
+            {isSignUp ? "Already have an account?" : "New to Alumni Hub?"}{" "}
+            <button
+              type="button"
+              className="font-semibold text-blue-600 hover:underline"
+              onClick={() => {
+                setMode(isSignUp ? "signin" : "signup");
+                setError("");
+              }}
+            >
+              {isSignUp ? "Sign in" : "Create an account"}
+            </button>
+          </p>
+
+          {SHOW_TEST_ACCOUNTS && !isSignUp && (
+            <div className="mt-8 rounded-xl border border-dashed border-slate-300 bg-white p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Test accounts</p>
+              <p className="mt-1 text-xs text-slate-500">
+                Click to fill in. Password for all: <code className="rounded bg-slate-100 px-1 font-semibold">{TEST_PASSWORD}</code>
+              </p>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {TEST_ACCOUNTS.map((a) => (
+                  <button key={a.email} type="button" onClick={() => fillTestAccount(a.email)} className="btn btn-secondary btn-sm flex-col gap-0 py-2">
+                    <span>{a.role}</span>
+                    <span className="text-[10px] font-normal text-slate-400">{a.email}</span>
+                  </button>
+                ))}
               </div>
             </div>
           )}
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Email</label>
-            <div className="relative">
-              <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="email@domain.com"
-                className="w-full pl-9 pr-4 py-2.5 bg-[#f4f6fa] text-slate-900 text-xs rounded-xl border-none focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">Password</label>
-            <div className="relative">
-              <Lock className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full pl-9 pr-4 py-2.5 bg-[#f4f6fa] text-slate-900 text-xs rounded-xl border-none focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md shadow-blue-500/20 text-xs transition-all flex items-center justify-center space-x-2"
-          >
-            <span>{isSignUp ? `Register as ${selectedRole}` : `Sign In as ${selectedRole}`}</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </form>
-
-        <div className="mt-4 text-center">
-          <button
-            type="button"
-            onClick={() => setIsSignUp(!isSignUp)}
-            className="text-xs text-blue-600 hover:underline font-bold"
-          >
-            {isSignUp ? "Already have an account? Sign In" : "Need an account? Register"}
-          </button>
         </div>
-
-        {/* Demo Buttons */}
-        <div className="mt-6 pt-4 border-t border-slate-100">
-          <p className="text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-            1-Click Account Preview
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              onClick={() => handleInstantDemo("student")}
-              className="bg-blue-50 hover:bg-blue-100 text-blue-700 text-[11px] font-bold py-2 rounded-xl border border-blue-200 transition-all text-center"
-            >
-              Student Account
-            </button>
-            <button
-              onClick={() => handleInstantDemo("teacher")}
-              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold py-2 rounded-xl border border-emerald-200 transition-all text-center"
-            >
-              Teacher Account
-            </button>
-            <button
-              onClick={() => handleInstantDemo("alumni")}
-              className="bg-purple-50 hover:bg-purple-100 text-purple-700 text-[11px] font-bold py-2 rounded-xl border border-purple-200 transition-all text-center"
-            >
-              Alumni Account
-            </button>
-          </div>
-        </div>
-
       </div>
     </div>
   );

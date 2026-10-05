@@ -1,219 +1,147 @@
-import React, { useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
+  ClipboardList,
   LayoutDashboard,
-  User,
-  Search,
   LogOut,
-  Bell,
-  Database,
-  Info,
+  Menu,
+  MessagesSquare,
+  Search,
+  Star,
+  UserRound,
+  UserSearch,
   Users,
-  FileText
+  X,
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { Avatar, RoleBadge } from "./ui";
+import { VerifyBanner } from "./VerifyBanner";
 
-export const AppLayout = ({ children, title = "Dashboard" }) => {
-  const { user, logout, isFirebaseActive } = useAuth();
+const NAV = {
+  student: [
+    { to: "/student", label: "Dashboard", icon: LayoutDashboard, end: true },
+    { to: "/student/profile", label: "Profile & Resume", icon: UserRound },
+    { to: "/student/alumni", label: "Find Alumni", icon: Search },
+    { to: "/student/applications", label: "My Applications", icon: ClipboardList },
+    { to: "/discussion", label: "Discussion", icon: MessagesSquare },
+  ],
+  teacher: [
+    { to: "/teacher", label: "Dashboard", icon: LayoutDashboard, end: true },
+    { to: "/teacher/students", label: "Student Profiles", icon: Users },
+    { to: "/discussion", label: "Discussion", icon: MessagesSquare },
+    { to: "/teacher/profile", label: "My Profile", icon: UserRound },
+  ],
+  alumni: [
+    { to: "/alumni", label: "Dashboard", icon: LayoutDashboard, end: true },
+    { to: "/alumni/search", label: "Search Students", icon: UserSearch },
+    { to: "/alumni/shortlist", label: "Shortlist & Referrals", icon: Star },
+    { to: "/discussion", label: "Discussion", icon: MessagesSquare },
+    { to: "/alumni/profile", label: "My Profile", icon: UserRound },
+  ],
+};
+
+const Brand = () => (
+  <div className="flex items-center gap-3">
+    <img src={`${process.env.PUBLIC_URL}/alumnihublogo.png`} alt="" className="h-9 w-9 rounded-xl object-cover shadow-sm" />
+    <div>
+      <p className="text-base font-bold leading-tight tracking-tight text-slate-900">Alumni Hub</p>
+      <p className="text-[11px] font-medium text-slate-400">Students · Teachers · Alumni</p>
+    </div>
+  </div>
+);
+
+const SidebarContent = ({ user, onNavigate, onLogout }) => (
+  <div className="flex h-full flex-col justify-between">
+    <div className="space-y-8">
+      <div className="px-2 pt-1">
+        <Brand />
+      </div>
+      <nav className="space-y-1">
+        {(NAV[user?.role] || []).map(({ to, label, icon: Icon, end }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            onClick={onNavigate}
+            className={({ isActive }) =>
+              `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+                isActive ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              }`
+            }
+          >
+            <Icon className="h-[18px] w-[18px] shrink-0" />
+            {label}
+          </NavLink>
+        ))}
+      </nav>
+    </div>
+
+    {user && (
+      <div className="space-y-2 border-t border-slate-100 pt-4">
+        <div className="flex items-center gap-3 px-2">
+          <Avatar name={user.name} size="sm" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-slate-900">{user.name}</p>
+            <p className="truncate text-xs text-slate-400">{user.email}</p>
+          </div>
+          <RoleBadge role={user.role} />
+        </div>
+        <button onClick={onLogout} className="btn btn-ghost w-full justify-start text-rose-600 hover:bg-rose-50 hover:text-rose-700">
+          <LogOut className="h-4 w-4" />
+          Sign out
+        </button>
+      </div>
+    )}
+  </div>
+);
+
+export const AppLayout = () => {
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [showFirebaseModal, setShowFirebaseModal] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/auth");
-  };
+  useEffect(() => setDrawerOpen(false), [location.pathname]);
 
-  const getRoleBadgeStyle = (role) => {
-    switch (role) {
-      case "student":
-        return "bg-blue-50 text-blue-700 border-blue-200";
-      case "teacher":
-        return "bg-emerald-50 text-emerald-700 border-emerald-200";
-      case "alumni":
-        return "bg-purple-50 text-purple-700 border-purple-200";
-      default:
-        return "bg-slate-100 text-slate-700 border-slate-200";
-    }
+  const handleLogout = async () => {
+    await logout();
+    navigate("/auth", { replace: true });
   };
 
   return (
-    <div className="flex h-screen bg-[#f4f6fa] font-sans overflow-hidden text-slate-800">
-      {/* 1. Left Vertical Sidebar */}
-      <aside className="w-64 bg-white border-r border-slate-200/80 flex flex-col justify-between p-4 z-30 shrink-0 hidden md:flex">
-        <div className="space-y-8">
-          {/* Logo Brand */}
-          <div className="flex items-center space-x-3 px-2 pt-2">
-            <img 
-              src={process.env.PUBLIC_URL + "/alumnihublogo.png"} 
-              alt="Alumni Hub Logo" 
-              className="w-9 h-9 rounded-xl shadow-sm object-cover overflow-hidden" 
-            />
-            <div>
-              <h1 className="font-bold text-slate-900 text-base leading-tight tracking-tight">Alumni Hub</h1>
-              <span className="text-[11px] font-medium text-slate-400">MCA Platform</span>
-            </div>
-          </div>
-
-          {/* Navigation Links */}
-          <nav className="space-y-1">
-            <Link
-              to={user ? `/${user.role}` : "/auth"}
-              className={`flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                location.pathname === `/${user?.role}`
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                  : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              <LayoutDashboard className="w-4 h-4 shrink-0" />
-              <span>Main Dashboard</span>
-            </Link>
-
-            {user?.role === "student" && (
-              <Link
-                to="/student?tab=profile"
-                className="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all"
-              >
-                <User className="w-4 h-4 shrink-0" />
-                <span>My Profile & ATS Resume</span>
-              </Link>
-            )}
-
-            {user?.role === "alumni" && (
-              <Link
-                to="/alumni?tab=search"
-                className="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all"
-              >
-                <Users className="w-4 h-4 shrink-0" />
-                <span>Student Directory</span>
-              </Link>
-            )}
-
-            {user?.role === "teacher" && (
-              <Link
-                to="/teacher?tab=students"
-                className="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-all"
-              >
-                <FileText className="w-4 h-4 shrink-0" />
-                <span>Student Roster</span>
-              </Link>
-            )}
-          </nav>
-        </div>
-
-        {/* Sidebar Footer User Info & Sign Out */}
-        {user && (
-          <div className="pt-4 border-t border-slate-100 space-y-3">
-            <div className="flex items-center space-x-3 px-2">
-              <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs border border-blue-200 shrink-0">
-                {user.name?.[0] || "U"}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-slate-900 truncate">{user.name}</p>
-                <span className={`text-[9px] uppercase font-extrabold px-2 py-0.2 rounded border ${getRoleBadgeStyle(user.role)}`}>
-                  {user.role}
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center space-x-2 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition-all"
-            >
-              <LogOut className="w-4 h-4 shrink-0" />
-              <span>Sign Out</span>
-            </button>
-          </div>
-        )}
+    <div className="min-h-screen bg-slate-50">
+      {/* Desktop sidebar */}
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-slate-200 bg-white p-4 lg:block">
+        <SidebarContent user={user} onLogout={handleLogout} />
       </aside>
 
-      {/* 2. Main Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        
-        {/* Top Header */}
-        <header className="h-16 bg-white border-b border-slate-200/80 px-6 flex items-center justify-between z-20 shrink-0">
-          <h1 className="text-lg font-bold text-slate-900 tracking-tight">{title}</h1>
+      {/* Mobile top bar */}
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-slate-200 bg-white/90 px-4 backdrop-blur lg:hidden">
+        <Brand />
+        <button className="btn btn-ghost p-2" onClick={() => setDrawerOpen(true)} aria-label="Open menu">
+          <Menu className="h-5 w-5" />
+        </button>
+      </header>
 
-          {/* Search Input Bar */}
-          <div className="hidden lg:flex items-center relative max-w-md w-full mx-6">
-            <Search className="w-4 h-4 absolute left-3.5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search for opportunities, posts, members..."
-              className="w-full bg-[#f4f6fa] border-none text-xs text-slate-900 placeholder-slate-400 rounded-xl pl-10 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-            />
-          </div>
-
-          {/* Right Header Badges */}
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => setShowFirebaseModal(true)}
-              className={`flex items-center space-x-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl border transition-all ${
-                isFirebaseActive
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                  : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
-              }`}
-            >
-              <Database className="w-3.5 h-3.5" />
-              <span>{isFirebaseActive ? "Firebase Live" : "Demo Mode"}</span>
-              <Info className="w-3 h-3 text-slate-400" />
+      {/* Mobile drawer */}
+      {drawerOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <div className="absolute inset-0 bg-slate-900/40" onClick={() => setDrawerOpen(false)} />
+          <div className="absolute inset-y-0 left-0 w-72 max-w-[85%] bg-white p-4 shadow-xl">
+            <button className="btn btn-ghost absolute right-3 top-3 p-1.5" onClick={() => setDrawerOpen(false)} aria-label="Close menu">
+              <X className="h-5 w-5" />
             </button>
-
-            <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center cursor-pointer hover:bg-slate-200 transition-all">
-              <Bell className="w-4 h-4" />
-            </div>
-
-            <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs shadow-sm">
-              {user?.name?.[0] || "U"}
-            </div>
-          </div>
-        </header>
-
-        {/* Content View Canvas */}
-        <main className="flex-1 overflow-y-auto p-6 bg-[#f4f6fa]">
-          <div className="max-w-7xl mx-auto space-y-6">
-            {children}
-          </div>
-        </main>
-      </div>
-
-      {/* Firebase Status Info Modal */}
-      {showFirebaseModal && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-[24px] p-6 max-w-md w-full shadow-2xl border border-slate-100">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
-                <Database className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900 text-lg">Firebase Connection Status</h3>
-                <p className="text-xs text-slate-500">Database and authentication state</p>
-              </div>
-            </div>
-
-            <div className="space-y-3 text-xs text-slate-600 mb-6">
-              <p>
-                <strong>Current Mode:</strong>{" "}
-                <span className={isFirebaseActive ? "text-emerald-600 font-bold" : "text-amber-600 font-bold"}>
-                  {isFirebaseActive ? "Live Cloud Firestore & Firebase Auth" : "Demo Mode (Local Storage Active)"}
-                </span>
-              </p>
-              <p>
-                {isFirebaseActive
-                  ? "Connected live to Firebase. User accounts, posts, applications, and chat messages are synchronized with Cloud Firestore."
-                  : "Operating cleanly using an in-memory & LocalStorage database with sample data so you can test all features immediately before putting in your Firebase keys!"}
-              </p>
-            </div>
-
-            <button
-              onClick={() => setShowFirebaseModal(false)}
-              className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs transition-all"
-            >
-              Close Info Window
-            </button>
+            <SidebarContent user={user} onNavigate={() => setDrawerOpen(false)} onLogout={handleLogout} />
           </div>
         </div>
       )}
+
+      <div className="lg:pl-64">
+        {user?.role === "student" && <VerifyBanner />}
+        <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 };
