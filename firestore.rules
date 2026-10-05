@@ -2,98 +2,115 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ---------- helpers ----------
     function signedIn() { return request.auth != null; }
     function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+    // The super admin is identified by its login email (Firebase Auth guarantees emails are unique).
+    function isAdmin() { return signedIn() && request.auth.token.email == 'superadmin@gmail.com'; }
     function me() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
     function userRole() { return me().role; }
-    function isRole(r) { return signedIn() && userRole() == r; }
     function myName() { return me().name; }
+    // Accounts created before the approval system have no status and count as approved.
+    function isApproved() { return signedIn() && me().get('status', 'approved') == 'approved'; }
+    function isRole(r) { return signedIn() && userRole() == r; }
+    function active(r) { return isRole(r) && isApproved(); }
+    function canRead() { return isApproved() || isAdmin(); }
     function post(id) { return get(/databases/$(database)/documents/posts/$(id)).data; }
     function onlyChanged(fields) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
     }
     function validName(n) { return n is string && n.size() > 0 && n.size() <= 80; }
 
-    // ---- Users: role, uid and email are fixed at registration; only the name can change ----
+    // ---------- users ----------
+    // New accounts start "pending"; only the super admin can approve, reject or suspend them.
     match /users/{uid} {
-      allow read: if signedIn();
+      allow get: if isOwner(uid) || canRead();
+      allow list: if canRead();
       allow create: if isOwner(uid)
                     && request.resource.data.uid == uid
                     && request.resource.data.email == request.auth.token.email
                     && validName(request.resource.data.name)
-                    && request.resource.data.role in ['student', 'teacher', 'alumni'];
-      allow update: if isOwner(uid) && onlyChanged(['name']) && validName(request.resource.data.name);
+                    && ((request.resource.data.role in ['student', 'teacher', 'alumni']
+                         && request.resource.data.status == 'pending')
+                        || (isAdmin() && request.resource.data.role == 'admin'
+                            && request.resource.data.status == 'approved'));
+      allow update: if (isOwner(uid) && onlyChanged(['name']) && validName(request.resource.data.name))
+                    || (isAdmin() && uid != request.auth.uid
+                        && onlyChanged(['status', 'reviewedAt', 'reviewedBy', 'reviewNote'])
+                        && request.resource.data.status in ['pending', 'approved', 'rejected', 'suspended']);
       allow delete: if false;
     }
 
-    // ---- Role profiles ----
+    // ---------- role profiles (owners may fill them in while pending) ----------
     match /studentProfiles/{uid} {
-      allow read: if signedIn();
+      allow read: if isOwner(uid) || canRead();
       allow write: if isOwner(uid) && isRole('student');
     }
     match /teacherProfiles/{uid} {
-      allow read: if signedIn();
+      allow read: if isOwner(uid) || canRead();
       allow write: if isOwner(uid) && isRole('teacher');
     }
     match /alumniProfiles/{uid} {
-      allow read: if signedIn();
+      allow read: if isOwner(uid) || canRead();
       allow write: if isOwner(uid) && isRole('alumni');
     }
 
-    // ---- Posts: teachers publish notices / polls, alumni publish hiring posts / tests ----
+    // ---------- posts: teachers & admin → notice / poll, alumni → hiring / test ----------
     match /posts/{postId} {
-      allow read: if signedIn();
+      allow read: if canRead();
       allow create: if signedIn()
                     && request.resource.data.postId == postId
                     && request.resource.data.authorUid == request.auth.uid
                     && request.resource.data.authorName == myName()
                     && request.resource.data.authorRole == userRole()
-                    && ((userRole() == 'teacher' && request.resource.data.type in ['notice', 'poll'])
-                        || (userRole() == 'alumni' && request.resource.data.type in ['hiring', 'test']))
+                    && (((active('teacher') || isAdmin()) && request.resource.data.type in ['notice', 'poll'])
+                        || (active('alumni') && request.resource.data.type in ['hiring', 'test']))
                     && (request.resource.data.type != 'poll'
                         || (request.resource.data.options is list
                             && request.resource.data.options.size() >= 2
                             && request.resource.data.options.size() <= 6));
       allow update: if signedIn() && resource.data.authorUid == request.auth.uid
                     && onlyChanged(['title', 'body', 'meta']);
-      allow delete: if signedIn() && resource.data.authorUid == request.auth.uid;
+      allow delete: if (signedIn() && resource.data.authorUid == request.auth.uid) || isAdmin();
     }
 
-    // ---- Applications (doc id = postId_studentUid): students apply, the post author manages status ----
+    // ---------- applications (id = postId_studentUid) ----------
     match /applications/{applicationId} {
       allow read: if signedIn()
                   && (resource.data.studentUid == request.auth.uid
-                      || resource.data.postAuthorUid == request.auth.uid);
-      allow create: if isRole('student')
+                      || resource.data.postAuthorUid == request.auth.uid
+                      || isAdmin());
+      allow create: if active('student')
                     && applicationId == request.resource.data.postId + '_' + request.auth.uid
                     && request.resource.data.studentUid == request.auth.uid
                     && request.resource.data.studentName == myName()
                     && request.resource.data.status == 'applied'
                     && post(request.resource.data.postId).type in ['hiring', 'test']
                     && request.resource.data.postAuthorUid == post(request.resource.data.postId).authorUid;
-      allow update: if signedIn()
+      allow update: if isApproved()
                     && resource.data.postAuthorUid == request.auth.uid
                     && onlyChanged(['status', 'updatedAt'])
                     && request.resource.data.status in ['applied', 'shortlisted', 'rejected'];
-      // students may withdraw only while the application is still pending
-      allow delete: if signedIn() && resource.data.studentUid == request.auth.uid && resource.data.status == 'applied';
+      allow delete: if (signedIn() && resource.data.studentUid == request.auth.uid && resource.data.status == 'applied')
+                    || isAdmin();
     }
 
-    // ---- Poll votes: one vote per user per poll (doc id = postId_uid), option must exist ----
+    // ---------- poll votes (id = postId_uid) ----------
     match /pollVotes/{voteId} {
-      allow read: if signedIn();
-      allow create: if signedIn()
+      allow read: if canRead();
+      allow create: if isApproved()
                     && request.resource.data.uid == request.auth.uid
                     && voteId == request.resource.data.postId + '_' + request.auth.uid
                     && post(request.resource.data.postId).type == 'poll'
                     && request.resource.data.selectedOption in post(request.resource.data.postId).options;
-      allow update, delete: if false;
+      allow update: if false;
+      allow delete: if isAdmin();
     }
 
-    // ---- Global discussion box ----
+    // ---------- global discussion ----------
     match /chatMessages/{messageId} {
-      allow read: if signedIn();
-      allow create: if signedIn()
+      allow read: if canRead();
+      allow create: if canRead()
                     && request.resource.data.senderUid == request.auth.uid
                     && request.resource.data.senderName == myName()
                     && request.resource.data.senderRole == userRole()
@@ -104,32 +121,33 @@ service cloud.firestore {
                         || (request.resource.data.replyTo is string
                             && exists(/databases/$(database)/documents/chatMessages/$(request.resource.data.replyTo))));
       allow update: if false;
-      allow delete: if signedIn() && resource.data.senderUid == request.auth.uid;
+      allow delete: if (signedIn() && resource.data.senderUid == request.auth.uid) || isAdmin();
     }
 
-    // ---- Alumni shortlists / referrals (doc id = alumniUid_studentUid) — visible to the student ----
+    // ---------- shortlists / referrals (id = alumniUid_studentUid) ----------
     match /shortlists/{shortlistId} {
-      // get: the alumnus may check their own entry even before it exists (the id starts with their uid)
       allow get: if signedIn()
                  && (shortlistId.split('_')[0] == request.auth.uid
-                     || resource.data.studentUid == request.auth.uid);
+                     || resource.data.studentUid == request.auth.uid
+                     || isAdmin());
       allow list: if signedIn()
                   && (resource.data.alumniUid == request.auth.uid
-                      || resource.data.studentUid == request.auth.uid);
-      allow create: if isRole('alumni')
+                      || resource.data.studentUid == request.auth.uid
+                      || isAdmin());
+      allow create: if active('alumni')
                     && request.resource.data.alumniUid == request.auth.uid
                     && request.resource.data.alumniName == myName()
                     && request.resource.data.status == 'shortlisted'
                     && shortlistId == request.auth.uid + '_' + request.resource.data.studentUid;
-      allow update: if signedIn() && resource.data.alumniUid == request.auth.uid
+      allow update: if isApproved() && resource.data.alumniUid == request.auth.uid
                     && onlyChanged(['status', 'updatedAt'])
                     && request.resource.data.status in ['shortlisted', 'referred'];
-      allow delete: if signedIn() && resource.data.alumniUid == request.auth.uid;
+      allow delete: if (signedIn() && resource.data.alumniUid == request.auth.uid) || isAdmin();
     }
 
-    // ---- Private alumni notes about a shortlisted student (doc id = alumniUid_studentUid) ----
+    // ---------- private alumni notes (id = alumniUid_studentUid) ----------
     match /shortlistNotes/{noteId} {
-      allow read, write: if isRole('alumni') && noteId.split('_')[0] == request.auth.uid;
+      allow read, write: if active('alumni') && noteId.split('_')[0] == request.auth.uid;
     }
   }
 }

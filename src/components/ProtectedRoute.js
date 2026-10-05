@@ -2,6 +2,7 @@ import React from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { dashboardPath, useAuth } from "../context/AuthContext";
 import { Spinner } from "./ui";
+import { AccountStatusScreen } from "./AccountStatusScreen";
 
 /**
  * Without `role`: requires a signed-in user whose role is stored in Firestore.
@@ -44,6 +45,9 @@ export const ProtectedRoute = ({ role }) => {
       </div>
     );
   }
+
+  // New accounts stay here until the super admin approves them (the screen updates live).
+  if (user.role !== "admin" && user.status !== "approved") return <AccountStatusScreen />;
 
   if (role && user.role !== role) return <Navigate to={dashboardPath(user.role)} replace />;
   return <Outlet />;

@@ -3,11 +3,13 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Building2,
   ClipboardList,
+  FileText,
   LayoutDashboard,
   LogOut,
   Menu,
   MessagesSquare,
   Search,
+  ShieldCheck,
   Star,
   UserRound,
   UserSearch,
@@ -38,6 +40,12 @@ const NAV = {
     { to: "/alumni/shortlist", label: "Shortlist & Referrals", icon: Star },
     { to: "/discussion", label: "Discussion", icon: MessagesSquare },
     { to: "/alumni/profile", label: "My Profile", icon: UserRound },
+  ],
+  admin: [
+    { to: "/admin", label: "Overview", icon: LayoutDashboard, end: true },
+    { to: "/admin/users", label: "Users & Approvals", icon: ShieldCheck },
+    { to: "/admin/content", label: "Content", icon: FileText },
+    { to: "/discussion", label: "Discussion", icon: MessagesSquare },
   ],
 };
 

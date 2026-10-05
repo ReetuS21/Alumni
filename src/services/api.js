@@ -145,7 +145,15 @@ export const removeFromShortlist = (id) =>
 
 // ---------- Stats ----------
 
+/** Number of approved accounts with this role. */
 export const countUsersByRole = async (role) => {
-  const snap = await getCountFromServer(query(collection(db, "users"), where("role", "==", role)));
+  const snap = await getCountFromServer(query(collection(db, "users"), where("role", "==", role), where("status", "==", "approved")));
   return snap.data().count;
 };
+
+// ---------- Super admin ----------
+
+export const reviewUser = (admin, uid, status, reviewNote = "") =>
+  updateDoc(doc(db, "users", uid), { status, reviewNote, reviewedBy: admin.email, reviewedAt: serverTimestamp() });
+
+export const deleteApplication = (id) => deleteDoc(doc(db, "applications", id));

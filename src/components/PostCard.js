@@ -23,6 +23,7 @@ export const PostCard = ({ post, applied = false, footer }) => {
   const meta = post.meta || {};
   const isStudent = user.role === "student";
   const isAuthor = post.authorUid === user.uid;
+  const canDelete = isAuthor || user.role === "admin";
   const deadlinePassed = meta.deadline && new Date(`${meta.deadline}T23:59:59`) < new Date();
 
   const apply = async (extra) => {
@@ -86,7 +87,7 @@ export const PostCard = ({ post, applied = false, footer }) => {
         </div>
       )}
 
-      {(post.type === "hiring" || post.type === "test" || isAuthor) && (
+      {(post.type === "hiring" || post.type === "test" || canDelete) && (
         <footer className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
           {post.type === "hiring" && isStudent &&
             (applied ? (
@@ -144,7 +145,7 @@ export const PostCard = ({ post, applied = false, footer }) => {
               </button>
             ))}
 
-          {isAuthor && (
+          {canDelete && (
             <button className="btn btn-danger btn-sm ml-auto" onClick={remove}>
               <Trash2 className="h-3.5 w-3.5" /> Delete
             </button>

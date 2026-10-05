@@ -2,6 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
 import { normalizeStudentProfile } from "../utils/profile";
+import { accountStatus } from "../context/AuthContext";
+
+const isApprovedDoc = (u) => accountStatus(u) === "approved";
 
 const byName = (a, b) => (a.name || "").localeCompare(b.name || "");
 
@@ -20,7 +23,8 @@ export const useStudents = () => {
         getDocs(collection(db, "studentProfiles")),
       ]);
       const profiles = Object.fromEntries(profilesSnap.docs.map((d) => [d.id, d.data()]));
-      const list = usersSnap.docs.map((d) => {
+      // Only approved accounts appear in directories and searches.
+      const list = usersSnap.docs.filter((d) => isApprovedDoc(d.data())).map((d) => {
         const u = d.data();
         return {
           ...normalizeStudentProfile(profiles[d.id] || {}),
@@ -59,7 +63,7 @@ export const useAlumni = () => {
           getDocs(collection(db, "alumniProfiles")),
         ]);
         const profiles = Object.fromEntries(profilesSnap.docs.map((d) => [d.id, d.data()]));
-        const list = usersSnap.docs.map((d) => ({
+        const list = usersSnap.docs.filter((d) => isApprovedDoc(d.data())).map((d) => ({
           ...(profiles[d.id] || {}),
           uid: d.id,
           name: profiles[d.id]?.name || d.data().name,

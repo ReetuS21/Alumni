@@ -14,6 +14,7 @@ React (Create React App) + Tailwind CSS + Firebase (Auth, Cloud Firestore, Stora
 | 3. Student dashboard | Live feed (hiring, tests, notices, polls), apply / submit solutions, poll voting, profile builder (skills, tools, onsite/virtual experience, education, certifications, languages, location, links, photo), one-click **ATS-friendly PDF resume**, alumni directory, application & referral tracking. |
 | 4. Teacher dashboard | Student / alumni counters, publish notices and polls, filter and export student profiles, alumni directory with counts per company and CSV export, own short profile. |
 | 5. Alumni dashboard | Publish hiring posts and skill tests, review applicants (applied → shortlisted / rejected), search students with simple filters (keyword, skill chips, location, internship experience), shortlist and mark as referred. |
+| Super admin | Every new account starts **pending** and cannot use the app until the super admin approves it (pending users see a waiting screen that updates live). The admin can approve, reject (with a reason), suspend and reactivate accounts, export the user list, publish announcements and delete any post or chat message. |
 
 ## Setup
 
@@ -33,7 +34,8 @@ React (Create React App) + Tailwind CSS + Firebase (Auth, Cloud Firestore, Stora
    npm install
    npm start
    ```
-5. **Test accounts** — creates three logins plus sample posts and messages:
+5. **Test accounts** — creates the super admin and three approved test logins, plus sample posts and messages.
+   It also marks accounts created before the approval system as approved:
    ```bash
    npm run seed
    ```
@@ -43,6 +45,7 @@ React (Create React App) + Tailwind CSS + Firebase (Auth, Cloud Firestore, Stora
    | Student | student@gmail.com | alumni267 |
    | Teacher | teacher@gmail.com | alumni267 |
    | Alumni | alumni@gmail.com | alumni267 |
+   | Super admin | superadmin@gmail.com | alumni267 |
 
    The login page shows these as one-click shortcuts. Set `REACT_APP_SHOW_TEST_ACCOUNTS=false` to hide them.
 

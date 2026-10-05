@@ -89,8 +89,9 @@ const ROLE_STYLES = {
   student: "bg-blue-50 text-blue-700 ring-blue-200",
   teacher: "bg-emerald-50 text-emerald-700 ring-emerald-200",
   alumni: "bg-violet-50 text-violet-700 ring-violet-200",
+  admin: "bg-slate-900 text-white ring-slate-900",
 };
-const ROLE_LABEL = { student: "Student", teacher: "Teacher", alumni: "Alumni" };
+const ROLE_LABEL = { student: "Student", teacher: "Teacher", alumni: "Alumni", admin: "Admin" };
 
 export const RoleBadge = ({ role }) =>
   role ? <span className={`badge ${ROLE_STYLES[role] || "bg-slate-50 text-slate-600 ring-slate-200"}`}>{ROLE_LABEL[role] || role}</span> : null;
@@ -112,6 +113,9 @@ const STATUS_STYLES = {
   shortlisted: "bg-emerald-50 text-emerald-700 ring-emerald-200",
   rejected: "bg-rose-50 text-rose-700 ring-rose-200",
   referred: "bg-violet-50 text-violet-700 ring-violet-200",
+  pending: "bg-amber-50 text-amber-700 ring-amber-200",
+  approved: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  suspended: "bg-rose-50 text-rose-700 ring-rose-200",
 };
 
 export const StatusBadge = ({ status }) => (

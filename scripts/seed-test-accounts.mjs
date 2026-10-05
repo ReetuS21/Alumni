@@ -10,7 +10,7 @@
 import { readFileSync, existsSync } from "node:fs";
 import { initializeApp } from "firebase/app";
 import { connectAuthEmulator, createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword, signOut, updateProfile } from "firebase/auth";
-import { addDoc, collection, connectFirestoreEmulator, doc, getDoc, getDocs, getFirestore, query, serverTimestamp, setDoc, where } from "firebase/firestore";
+import { addDoc, collection, connectFirestoreEmulator, doc, getDoc, getDocs, getFirestore, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 
 const PASSWORD = "alumni267";
 
@@ -151,15 +151,28 @@ const signInOrCreate = async (email, name) => {
   }
 };
 
-const run = async () => {
-  console.log(`Seeding project "${config.projectId}"…\n`);
-  const uids = {};
+const ADMIN = { email: "superadmin@gmail.com", name: "Super Admin" };
 
+const run = async () => {
+  console.log(`Seeding project "${config.projectId}"…
+`);
+
+  // 1) Super admin account
+  console.log(`ADMIN: ${ADMIN.email}`);
+  const adminUser = await signInOrCreate(ADMIN.email, ADMIN.name);
+  const adminRef = doc(db, "users", adminUser.uid);
+  if (!(await getDoc(adminRef)).exists()) {
+    await setDoc(adminRef, { uid: adminUser.uid, name: ADMIN.name, email: ADMIN.email, role: "admin", status: "approved", createdAt: serverTimestamp() });
+    console.log("  ✓ super admin record created");
+  }
+  await signOut(auth);
+  console.log("");
+
+  // 2) Test accounts + profiles (new accounts start "pending")
+  const ready = [];
   for (const acc of ACCOUNTS) {
     console.log(`${acc.role.toUpperCase()}: ${acc.email}`);
     const user = await signInOrCreate(acc.email, acc.name);
-    uids[acc.role] = user.uid;
-
     const userRef = doc(db, "users", user.uid);
     const existing = await getDoc(userRef);
     if (existing.exists() && existing.data().role !== acc.role) {
@@ -168,21 +181,43 @@ const run = async () => {
       continue;
     }
     if (!existing.exists()) {
-      await setDoc(userRef, { uid: user.uid, name: acc.name, email: acc.email, role: acc.role, createdAt: serverTimestamp() });
+      await setDoc(userRef, { uid: user.uid, name: acc.name, email: acc.email, role: acc.role, status: "pending", createdAt: serverTimestamp() });
     }
     // Posts and messages must carry the name stored in users/{uid} (enforced by the rules).
     const displayName = existing.exists() ? existing.data().name : acc.name;
     await setDoc(doc(db, acc.profileCollection, user.uid), { uid: user.uid, name: displayName, email: acc.email, ...acc.profile }, { merge: true });
     console.log("  ✓ profile saved");
+    ready.push({ acc, uid: user.uid, displayName });
+    await signOut(auth);
+  }
 
+  // 3) Super admin approves the test accounts and marks older accounts (no status yet) as approved
+  console.log("\nADMIN: approving accounts");
+  await signInWithEmailAndPassword(auth, ADMIN.email, PASSWORD);
+  const testUids = new Set(ready.map((r) => r.uid));
+  let approved = 0;
+  for (const d of (await getDocs(collection(db, "users"))).docs) {
+    const u = d.data();
+    if (u.role === "admin") continue;
+    if ((testUids.has(d.id) && u.status !== "approved") || !u.status) {
+      await updateDoc(d.ref, { status: "approved", reviewedBy: ADMIN.email, reviewedAt: serverTimestamp() });
+      approved += 1;
+    }
+  }
+  console.log(`  ✓ ${approved} account(s) approved`);
+  await signOut(auth);
+
+  // 4) Sample content (only for accounts that have none yet)
+  for (const { acc, uid, displayName } of ready) {
+    await signInWithEmailAndPassword(auth, acc.email, PASSWORD);
     if (acc.posts.length) {
-      const mine = await getDocs(query(collection(db, "posts"), where("authorUid", "==", user.uid)));
+      const mine = await getDocs(query(collection(db, "posts"), where("authorUid", "==", uid)));
       if (mine.empty) {
         for (const p of acc.posts) {
           const ref = doc(collection(db, "posts"));
           await setDoc(ref, {
             postId: ref.id,
-            authorUid: user.uid,
+            authorUid: uid,
             authorName: displayName,
             authorRole: acc.role,
             type: p.type,
@@ -193,29 +228,26 @@ const run = async () => {
             createdAt: serverTimestamp(),
           });
         }
-        console.log(`  ✓ ${acc.posts.length} sample posts added`);
+        console.log(`  ✓ ${acc.email}: ${acc.posts.length} sample posts added`);
       }
     }
-
-    const msgs = await getDocs(query(collection(db, "chatMessages"), where("senderUid", "==", user.uid)));
+    const msgs = await getDocs(query(collection(db, "chatMessages"), where("senderUid", "==", uid)));
     if (msgs.empty && acc.message) {
       await addDoc(collection(db, "chatMessages"), {
-        senderUid: user.uid,
+        senderUid: uid,
         senderName: displayName,
         senderRole: acc.role,
         text: acc.message,
         replyTo: null,
         sentAt: serverTimestamp(),
       });
-      console.log("  ✓ sample discussion message added");
+      console.log(`  ✓ ${acc.email}: sample discussion message added`);
     }
-
     await signOut(auth);
-    console.log("");
   }
 
-  console.log("Done. Log in with any of these (password: alumni267):");
-  ACCOUNTS.forEach((a) => console.log(`  ${a.role.padEnd(8)} ${a.email}`));
+  console.log("\nDone. Log in with any of these (password: alumni267):");
+  [...ACCOUNTS, { role: "admin", email: ADMIN.email }].forEach((a) => console.log(`  ${a.role.padEnd(8)} ${a.email}`));
   process.exit(0);
 };
 

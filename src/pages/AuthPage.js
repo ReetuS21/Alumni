@@ -16,6 +16,7 @@ const TEST_ACCOUNTS = [
   { role: "Student", email: "student@gmail.com" },
   { role: "Teacher", email: "teacher@gmail.com" },
   { role: "Alumni", email: "alumni@gmail.com" },
+  { role: "Super Admin", email: "superadmin@gmail.com" },
 ];
 const SHOW_TEST_ACCOUNTS = process.env.REACT_APP_SHOW_TEST_ACCOUNTS !== "false";
 
@@ -116,7 +117,9 @@ export const AuthPage = () => {
 
           <h2 className="text-2xl font-bold tracking-tight">{isSignUp ? "Create your account" : "Welcome back"}</h2>
           <p className="mt-1 text-sm text-slate-500">
-            {isSignUp ? "Choose your role — you'll get a dashboard built for it." : "Sign in to continue to your dashboard."}
+            {isSignUp
+              ? "Choose your role. New accounts are checked by the administrator before they can be used."
+              : "Sign in to continue to your dashboard."}
           </p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -194,7 +197,7 @@ export const AuthPage = () => {
               <p className="mt-1 text-xs text-slate-500">
                 Click to fill in. Password for all: <code className="rounded bg-slate-100 px-1 font-semibold">{TEST_PASSWORD}</code>
               </p>
-              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {TEST_ACCOUNTS.map((a) => (
                   <button key={a.email} type="button" onClick={() => fillTestAccount(a.email)} className="btn btn-secondary btn-sm flex-col gap-0 py-2">
                     <span>{a.role}</span>

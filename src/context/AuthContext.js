@@ -14,7 +14,12 @@ const AuthContext = createContext(null);
 
 export const ROLES = ["student", "teacher", "alumni"];
 
-export const dashboardPath = (role) => (ROLES.includes(role) ? `/${role}` : "/auth");
+export const ADMIN_EMAIL = "superadmin@gmail.com";
+
+export const dashboardPath = (role) => (role === "admin" ? "/admin" : ROLES.includes(role) ? `/${role}` : "/auth");
+
+/** Accounts created before the approval system have no status and count as approved. */
+export const accountStatus = (u) => u?.status || "approved";
 
 export const useAuth = () => useContext(AuthContext);
 
@@ -87,7 +92,8 @@ export const AuthProvider = ({ children }) => {
 
     // 1) users doc first — the security rules read the role from here.
     try {
-      await setDoc(doc(db, "users", uid), { uid, name, email, role, createdAt: serverTimestamp() });
+      // Every new account waits for the super admin to approve it.
+      await setDoc(doc(db, "users", uid), { uid, name, email, role, status: "pending", createdAt: serverTimestamp() });
     } catch (err) {
       // Don't leave a login without a role behind — remove it so the person can simply try again.
       await cred.user.delete().catch(() => {});
@@ -138,7 +144,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => signOut(auth);
 
-  const user = authUser && userDoc ? { ...userDoc, uid: authUser.uid, email: authUser.email } : null;
+  const user = authUser && userDoc ? { ...userDoc, uid: authUser.uid, email: authUser.email, status: accountStatus(userDoc) } : null;
 
   return (
     <AuthContext.Provider value={{ authUser, user, role: user?.role || null, loading, connectionError, register, login, logout }}>

@@ -24,6 +24,10 @@ import { SearchStudents } from "./pages/alumni/SearchStudents";
 import { Shortlist } from "./pages/alumni/Shortlist";
 import { AlumniProfile } from "./pages/alumni/AlumniProfile";
 
+import { AdminDashboard } from "./pages/admin/AdminDashboard";
+import { AdminUsers } from "./pages/admin/AdminUsers";
+import { AdminContent } from "./pages/admin/AdminContent";
+
 const HomeRedirect = () => {
   const { authUser, user, loading } = useAuth();
   if (loading) return <Spinner full />;
@@ -67,6 +71,12 @@ function App() {
                 <Route path="/alumni/search" element={<SearchStudents />} />
                 <Route path="/alumni/shortlist" element={<Shortlist />} />
                 <Route path="/alumni/profile" element={<AlumniProfile />} />
+              </Route>
+
+              <Route element={<ProtectedRoute role="admin" />}>
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/users" element={<AdminUsers />} />
+                <Route path="/admin/content" element={<AdminContent />} />
               </Route>
             </Route>
           </Route>

@@ -149,7 +149,7 @@ export const GlobalDiscussionBox = ({ className = "h-[560px]" }) => {
                     <button className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-blue-600" onClick={() => setReplyTo(msg)}>
                       <Reply className="h-3 w-3" /> Reply
                     </button>
-                    {mine && (
+                    {(mine || user.role === "admin") && (
                       <button className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-rose-600" onClick={() => handleDelete(msg.id)}>
                         <Trash2 className="h-3 w-3" /> Delete
                       </button>
