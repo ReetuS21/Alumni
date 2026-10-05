@@ -10,7 +10,7 @@ import { formatDate, millis, toUrl } from "../../utils/format";
 import { CreatePostForm } from "../../components/CreatePostForm";
 import { PostCard } from "../../components/PostCard";
 import { GlobalDiscussionBox } from "../../components/GlobalDiscussionBox";
-import { Alert, Avatar, EmptyState, PageHeader, StatCard } from "../../components/ui";
+import { Alert, Avatar, EmptyState, PageHeader, Spinner, StatCard } from "../../components/ui";
 
 const Applicants = ({ applicants }) => {
   const [error, setError] = useState("");
@@ -70,7 +70,7 @@ const Applicants = ({ applicants }) => {
 export const AlumniDashboard = () => {
   const { user } = useAuth();
   const [studentCount, setStudentCount] = useState(null);
-  const { data: profile } = useLiveDoc(() => doc(db, "alumniProfiles", user.uid), [user.uid]);
+  const { data: profile, loading: profileLoading } = useLiveDoc(() => doc(db, "alumniProfiles", user.uid), [user.uid]);
   const { data: posts } = useLiveQuery(() => query(collection(db, "posts"), where("authorUid", "==", user.uid)), [user.uid]);
   const { data: apps } = useLiveQuery(() => query(collection(db, "applications"), where("postAuthorUid", "==", user.uid)), [user.uid]);
   const { data: shortlists } = useLiveQuery(() => query(collection(db, "shortlists"), where("alumniUid", "==", user.uid)), [user.uid]);
@@ -118,7 +118,14 @@ export const AlumniDashboard = () => {
 
       <div className="grid gap-6 lg:grid-cols-12">
         <div className="space-y-6 lg:col-span-7">
-          <CreatePostForm key={profile?.company || "new"} types={["hiring", "test"]} defaults={{ company: profile?.company || "", jobRole: "", location: profile?.location || "" }} />
+          {/* Rendered once the profile has loaded so the company default is filled in without wiping typed text later. */}
+          {profileLoading ? (
+            <div className="card p-5">
+              <Spinner label="Loading…" />
+            </div>
+          ) : (
+            <CreatePostForm types={["hiring", "test"]} defaults={{ company: profile?.company || "", jobRole: "", location: profile?.location || "" }} />
+          )}
 
           <section className="space-y-4">
             <h2 className="section-title">My posts & applicants</h2>

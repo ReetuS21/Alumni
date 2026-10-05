@@ -28,6 +28,15 @@ export const GlobalDiscussionBox = ({ className = "h-[560px]" }) => {
     []
   );
   const messages = useMemo(() => [...data].reverse(), [data]);
+  const byId = useMemo(() => Object.fromEntries(data.map((m) => [m.id, m])), [data]);
+  // replyTo is a message id; older messages stored a { senderName, text } object.
+  const quoteOf = (replyTo) => {
+    if (!replyTo) return null;
+    if (typeof replyTo === "object") return replyTo;
+    const m = byId[replyTo];
+    if (!m) return { senderName: "", text: "an earlier message" };
+    return { senderName: m.senderName, text: m.text.length > 140 ? `${m.text.slice(0, 140)}…` : m.text };
+  };
 
   useLayoutEffect(() => {
     const el = listRef.current;
@@ -47,7 +56,7 @@ export const GlobalDiscussionBox = ({ className = "h-[560px]" }) => {
   const handleSend = async (e) => {
     e.preventDefault();
     const body = text.trim();
-    if (!body) return;
+    if (!body || sending) return;
     setSending(true);
     setError("");
     try {
@@ -102,6 +111,7 @@ export const GlobalDiscussionBox = ({ className = "h-[560px]" }) => {
         )}
         {messages.map((msg) => {
           const mine = msg.senderUid === user.uid;
+          const quote = quoteOf(msg.replyTo);
           const day = formatDate(msg.sentAt) || formatDate(new Date());
           const showDay = day !== lastDay;
           lastDay = day;
@@ -127,9 +137,10 @@ export const GlobalDiscussionBox = ({ className = "h-[560px]" }) => {
                       mine ? "rounded-tr-sm bg-blue-600 text-white" : "rounded-tl-sm border border-slate-200 bg-white text-slate-800"
                     }`}
                   >
-                    {msg.replyTo && (
+                    {quote && (
                       <div className={`mb-1.5 rounded-md border-l-2 px-2 py-1 text-xs ${mine ? "border-blue-200 bg-blue-500/40 text-blue-50" : "border-slate-300 bg-slate-50 text-slate-500"}`}>
-                        <span className="font-semibold">{msg.replyTo.senderName}</span>: {msg.replyTo.text}
+                        {quote.senderName && <span className="font-semibold">{quote.senderName}: </span>}
+                        {quote.text}
                       </div>
                     )}
                     <p className="whitespace-pre-wrap break-words">{msg.text}</p>
@@ -173,7 +184,7 @@ export const GlobalDiscussionBox = ({ className = "h-[560px]" }) => {
             maxLength={MAX_LEN}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) handleSend(e);
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) handleSend(e);
             }}
             placeholder="Ask a question or share an answer…"
             className="input max-h-32 min-h-[40px] resize-none"

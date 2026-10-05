@@ -4,6 +4,7 @@ import {
   deleteDoc,
   doc,
   getCountFromServer,
+  getDoc,
   query,
   serverTimestamp,
   setDoc,
@@ -16,7 +17,10 @@ import { db, storage } from "../firebase";
 // ---------- Posts (Modules 3, 4, 5) ----------
 
 export const createPost = async (user, { type, title, body, options = [], meta = {} }) => {
-  const docRef = await addDoc(collection(db, "posts"), {
+  // One write: the id is generated client-side so postId is stored with the post.
+  const docRef = doc(collection(db, "posts"));
+  await setDoc(docRef, {
+    postId: docRef.id,
     authorUid: user.uid,
     authorName: user.name || "",
     authorRole: user.role,
@@ -27,7 +31,6 @@ export const createPost = async (user, { type, title, body, options = [], meta =
     meta,
     createdAt: serverTimestamp(),
   });
-  await updateDoc(docRef, { postId: docRef.id });
   return docRef.id;
 };
 
@@ -80,9 +83,7 @@ export const sendChatMessage = (user, text, replyTo = null) =>
     senderName: user.name || "",
     senderRole: user.role,
     text: text.trim(),
-    replyTo: replyTo
-      ? { id: replyTo.id, senderName: replyTo.senderName, text: String(replyTo.text).slice(0, 140) }
-      : null,
+    replyTo: replyTo ? replyTo.id : null,
     sentAt: serverTimestamp(),
   });
 
@@ -127,15 +128,20 @@ export const addToShortlist = (alumni, student) =>
     studentName: student.name || "",
     studentEmail: student.email || "",
     status: "shortlisted",
-    note: "",
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
 
+// Private notes live in their own collection so the student cannot read them.
+export const getShortlistNote = async (id) => (await getDoc(doc(db, "shortlistNotes", id))).data()?.note || "";
+
+export const saveShortlistNote = (id, note) => setDoc(doc(db, "shortlistNotes", id), { note, updatedAt: serverTimestamp() });
+
 export const updateShortlist = (id, data) =>
   updateDoc(doc(db, "shortlists", id), { ...data, updatedAt: serverTimestamp() });
 
-export const removeFromShortlist = (id) => deleteDoc(doc(db, "shortlists", id));
+export const removeFromShortlist = (id) =>
+  Promise.all([deleteDoc(doc(db, "shortlists", id)), deleteDoc(doc(db, "shortlistNotes", id))]);
 
 // ---------- Stats ----------
 

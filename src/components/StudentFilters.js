@@ -57,7 +57,7 @@ export const useStudentFilters = (students) => {
       return true;
     });
     if (sort === "name") return [...list].sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-    if (sort === "recent") return [...list].sort((a, b) => millis(b.updatedAt || 0) - millis(a.updatedAt || 0));
+    if (sort === "recent") return [...list].sort((a, b) => millis(b.updatedAt, 0) - millis(a.updatedAt, 0));
     return [...list].sort(
       (a, b) => (b.skills?.length || 0) + (b.experience?.length || 0) * 2 - ((a.skills?.length || 0) + (a.experience?.length || 0) * 2)
     );

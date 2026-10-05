@@ -83,12 +83,19 @@ export const AuthProvider = ({ children }) => {
     if (!ROLES.includes(role)) throw new Error("Please choose a valid role.");
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     const uid = cred.user.uid;
-    await updateProfile(cred.user, { displayName: name });
+    email = cred.user.email; // Firebase normalises the address (lower-case); rules compare against it
 
     // 1) users doc first — the security rules read the role from here.
-    await setDoc(doc(db, "users", uid), { uid, name, email, role, createdAt: serverTimestamp() });
+    try {
+      await setDoc(doc(db, "users", uid), { uid, name, email, role, createdAt: serverTimestamp() });
+    } catch (err) {
+      // Don't leave a login without a role behind — remove it so the person can simply try again.
+      await cred.user.delete().catch(() => {});
+      throw err;
+    }
+    updateProfile(cred.user, { displayName: name }).catch(() => {});
 
-    // 2) then the role-specific profile.
+    // 2) then the role-specific profile (pages cope with a missing profile, so a failure here is not fatal).
     if (role === "student") {
       await setDoc(doc(db, "studentProfiles", uid), {
         ...emptyStudentProfile(),

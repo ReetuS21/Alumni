@@ -1,5 +1,7 @@
 const escapeCell = (value) => {
-  const s = value == null ? "" : String(value);
+  let s = value == null ? "" : String(value);
+  // Stop spreadsheet apps from running user-entered text as a formula (CSV injection).
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 

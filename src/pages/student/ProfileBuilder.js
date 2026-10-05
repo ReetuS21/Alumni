@@ -222,7 +222,7 @@ export const ProfileBuilder = () => {
           </div>
           <div className="grid flex-1 gap-4 sm:grid-cols-2">
             <Field label="Full name">
-              <input required className="input" value={profile.name} onChange={setInput("name")} />
+              <input required maxLength={80} className="input" value={profile.name} onChange={setInput("name")} />
             </Field>
             <Field label="Designation / headline">
               <input className="input" value={profile.designation} onChange={setInput("designation")} placeholder="MCA Student | Full-Stack Developer" />

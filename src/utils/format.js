@@ -8,8 +8,8 @@ export const toDate = (value) => {
   return Number.isNaN(d.getTime()) ? null : d;
 };
 
-/** Millis for client-side sorting; pending server timestamps sort as "now". */
-export const millis = (value) => toDate(value)?.getTime() ?? Date.now();
+/** Millis for client-side sorting. Missing values use `fallback` (default "now", which suits pending server timestamps). */
+export const millis = (value, fallback = Date.now()) => toDate(value)?.getTime() ?? fallback;
 
 export const formatDate = (value) => {
   const d = toDate(value);

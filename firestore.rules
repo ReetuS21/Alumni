@@ -4,21 +4,25 @@ service cloud.firestore {
 
     function signedIn() { return request.auth != null; }
     function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
-    function userRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
-    }
+    function me() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function userRole() { return me().role; }
     function isRole(r) { return signedIn() && userRole() == r; }
+    function myName() { return me().name; }
+    function post(id) { return get(/databases/$(database)/documents/posts/$(id)).data; }
     function onlyChanged(fields) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
     }
+    function validName(n) { return n is string && n.size() > 0 && n.size() <= 80; }
 
-    // ---- Users: the role is set once at registration and can never be changed from the client ----
+    // ---- Users: role, uid and email are fixed at registration; only the name can change ----
     match /users/{uid} {
       allow read: if signedIn();
       allow create: if isOwner(uid)
                     && request.resource.data.uid == uid
+                    && request.resource.data.email == request.auth.token.email
+                    && validName(request.resource.data.name)
                     && request.resource.data.role in ['student', 'teacher', 'alumni'];
-      allow update: if isOwner(uid) && request.resource.data.role == resource.data.role;
+      allow update: if isOwner(uid) && onlyChanged(['name']) && validName(request.resource.data.name);
       allow delete: if false;
     }
 
@@ -40,13 +44,18 @@ service cloud.firestore {
     match /posts/{postId} {
       allow read: if signedIn();
       allow create: if signedIn()
+                    && request.resource.data.postId == postId
                     && request.resource.data.authorUid == request.auth.uid
+                    && request.resource.data.authorName == myName()
                     && request.resource.data.authorRole == userRole()
                     && ((userRole() == 'teacher' && request.resource.data.type in ['notice', 'poll'])
-                        || (userRole() == 'alumni' && request.resource.data.type in ['hiring', 'test']));
+                        || (userRole() == 'alumni' && request.resource.data.type in ['hiring', 'test']))
+                    && (request.resource.data.type != 'poll'
+                        || (request.resource.data.options is list
+                            && request.resource.data.options.size() >= 2
+                            && request.resource.data.options.size() <= 6));
       allow update: if signedIn() && resource.data.authorUid == request.auth.uid
-                    && request.resource.data.type == resource.data.type
-                    && request.resource.data.authorUid == resource.data.authorUid;
+                    && onlyChanged(['title', 'body', 'meta']);
       allow delete: if signedIn() && resource.data.authorUid == request.auth.uid;
     }
 
@@ -54,27 +63,30 @@ service cloud.firestore {
     match /applications/{applicationId} {
       allow read: if signedIn()
                   && (resource.data.studentUid == request.auth.uid
-                      || resource.data.postAuthorUid == request.auth.uid
-                      || isRole('teacher'));
+                      || resource.data.postAuthorUid == request.auth.uid);
       allow create: if isRole('student')
                     && applicationId == request.resource.data.postId + '_' + request.auth.uid
                     && request.resource.data.studentUid == request.auth.uid
+                    && request.resource.data.studentName == myName()
                     && request.resource.data.status == 'applied'
-                    && request.resource.data.postAuthorUid ==
-                       get(/databases/$(database)/documents/posts/$(request.resource.data.postId)).data.authorUid;
+                    && post(request.resource.data.postId).type in ['hiring', 'test']
+                    && request.resource.data.postAuthorUid == post(request.resource.data.postId).authorUid;
       allow update: if signedIn()
                     && resource.data.postAuthorUid == request.auth.uid
                     && onlyChanged(['status', 'updatedAt'])
                     && request.resource.data.status in ['applied', 'shortlisted', 'rejected'];
-      allow delete: if signedIn() && resource.data.studentUid == request.auth.uid;
+      // students may withdraw only while the application is still pending
+      allow delete: if signedIn() && resource.data.studentUid == request.auth.uid && resource.data.status == 'applied';
     }
 
-    // ---- Poll votes: one vote per user per poll (doc id = postId_uid) ----
+    // ---- Poll votes: one vote per user per poll (doc id = postId_uid), option must exist ----
     match /pollVotes/{voteId} {
       allow read: if signedIn();
       allow create: if signedIn()
                     && request.resource.data.uid == request.auth.uid
-                    && voteId == request.resource.data.postId + '_' + request.auth.uid;
+                    && voteId == request.resource.data.postId + '_' + request.auth.uid
+                    && post(request.resource.data.postId).type == 'poll'
+                    && request.resource.data.selectedOption in post(request.resource.data.postId).options;
       allow update, delete: if false;
     }
 
@@ -83,15 +95,19 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create: if signedIn()
                     && request.resource.data.senderUid == request.auth.uid
+                    && request.resource.data.senderName == myName()
                     && request.resource.data.senderRole == userRole()
                     && request.resource.data.text is string
                     && request.resource.data.text.size() > 0
-                    && request.resource.data.text.size() <= 1000;
+                    && request.resource.data.text.size() <= 1000
+                    && (request.resource.data.replyTo == null
+                        || (request.resource.data.replyTo is string
+                            && exists(/databases/$(database)/documents/chatMessages/$(request.resource.data.replyTo))));
       allow update: if false;
       allow delete: if signedIn() && resource.data.senderUid == request.auth.uid;
     }
 
-    // ---- Alumni shortlists / referrals (doc id = alumniUid_studentUid) ----
+    // ---- Alumni shortlists / referrals (doc id = alumniUid_studentUid) — visible to the student ----
     match /shortlists/{shortlistId} {
       // get: the alumnus may check their own entry even before it exists (the id starts with their uid)
       allow get: if signedIn()
@@ -102,11 +118,18 @@ service cloud.firestore {
                       || resource.data.studentUid == request.auth.uid);
       allow create: if isRole('alumni')
                     && request.resource.data.alumniUid == request.auth.uid
+                    && request.resource.data.alumniName == myName()
+                    && request.resource.data.status == 'shortlisted'
                     && shortlistId == request.auth.uid + '_' + request.resource.data.studentUid;
       allow update: if signedIn() && resource.data.alumniUid == request.auth.uid
-                    && request.resource.data.alumniUid == resource.data.alumniUid
-                    && request.resource.data.studentUid == resource.data.studentUid;
+                    && onlyChanged(['status', 'updatedAt'])
+                    && request.resource.data.status in ['shortlisted', 'referred'];
       allow delete: if signedIn() && resource.data.alumniUid == request.auth.uid;
+    }
+
+    // ---- Private alumni notes about a shortlisted student (doc id = alumniUid_studentUid) ----
+    match /shortlistNotes/{noteId} {
+      allow read, write: if isRole('alumni') && noteId.split('_')[0] == request.auth.uid;
     }
   }
 }

@@ -1,38 +1,64 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { collection, query, where } from "firebase/firestore";
 import { Mail, Star, Trash2 } from "lucide-react";
 import { db } from "../../firebase";
 import { useAuth } from "../../context/AuthContext";
 import { useLiveQuery } from "../../hooks/useLive";
-import { removeFromShortlist, updateShortlist } from "../../services/api";
+import { getShortlistNote, removeFromShortlist, saveShortlistNote, updateShortlist } from "../../services/api";
 import { formatDate, millis } from "../../utils/format";
 import { Alert, Avatar, EmptyState, FilterChips, PageHeader, Spinner, StatusBadge } from "../../components/ui";
 
 const NoteEditor = ({ entry }) => {
-  const [note, setNote] = useState(entry.note || "");
-  const [saved, setSaved] = useState(true);
+  const [note, setNote] = useState("");
+  const [status, setStatus] = useState("loading"); // loading | saved | dirty | saving | error
+
+  useEffect(() => {
+    let cancelled = false;
+    getShortlistNote(entry.id)
+      .then((n) => {
+        if (cancelled) return;
+        setNote(n);
+        setStatus("saved");
+      })
+      .catch(() => {
+        if (!cancelled) setStatus("saved");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [entry.id]);
+
   const save = async () => {
-    if (saved) return;
+    if (status !== "dirty") return;
+    setStatus("saving");
     try {
-      await updateShortlist(entry.id, { note: note.trim() });
-      setSaved(true);
+      await saveShortlistNote(entry.id, note.trim());
+      setStatus("saved");
     } catch (e) {
       console.error("Could not save note:", e);
+      setStatus("error");
     }
   };
+
   return (
-    <textarea
-      rows={2}
-      className="input text-sm"
-      placeholder="Private note (e.g. good fit for SDE-1 role, referred on…)"
-      value={note}
-      onChange={(e) => {
-        setNote(e.target.value);
-        setSaved(false);
-      }}
-      onBlur={save}
-    />
+    <div>
+      <textarea
+        rows={2}
+        className="input text-sm"
+        disabled={status === "loading"}
+        placeholder="Private note — only you can see this (e.g. good fit for SDE-1 role)"
+        value={note}
+        onChange={(e) => {
+          setNote(e.target.value);
+          setStatus("dirty");
+        }}
+        onBlur={save}
+      />
+      <p className="mt-1 text-[11px] text-slate-400">
+        {status === "saving" ? "Saving…" : status === "error" ? "Could not save the note." : status === "dirty" ? "Unsaved — click outside to save" : "Private note · saved"}
+      </p>
+    </div>
   );
 };
 

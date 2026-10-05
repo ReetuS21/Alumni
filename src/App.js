@@ -28,7 +28,9 @@ const HomeRedirect = () => {
   const { authUser, user, loading } = useAuth();
   if (loading) return <Spinner full />;
   if (!authUser) return <Navigate to="/auth" replace />;
-  return <Navigate to={dashboardPath(user?.role)} replace />;
+  // Signed in but no role / connection problem: ProtectedRoute shows the right message.
+  if (!user) return <ProtectedRoute />;
+  return <Navigate to={dashboardPath(user.role)} replace />;
 };
 
 function App() {

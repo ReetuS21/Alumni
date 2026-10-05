@@ -15,7 +15,9 @@ const loadFonts = async (pdf) => {
       fetch(`${base}/fonts/OpenSauceSans-Regular.ttf`),
       fetch(`${base}/fonts/OpenSauceSans-Bold.ttf`),
     ]);
-    if (!reg.ok || !bold.ok) return "helvetica";
+    // A missing file can come back as the SPA's index.html with status 200 — make sure these are real fonts.
+    const isFont = (r) => r.ok && !(r.headers.get("content-type") || "").includes("text/html");
+    if (!isFont(reg) || !isFont(bold)) return "helvetica";
     pdf.addFileToVFS("OpenSauceSans-Regular.ttf", arrayBufferToBase64(await reg.arrayBuffer()));
     pdf.addFont("OpenSauceSans-Regular.ttf", "OpenSauceSans", "normal");
     pdf.addFileToVFS("OpenSauceSans-Bold.ttf", arrayBufferToBase64(await bold.arrayBuffer()));
@@ -33,6 +35,15 @@ const loadFonts = async (pdf) => {
  * Deliberately no tables, columns, images, icons or text boxes — ATS parsers fail on those.
  */
 export const exportATSResume = async (rawProfile) => {
+  try {
+    await buildResume(rawProfile);
+  } catch (e) {
+    console.error("Resume export failed:", e);
+    window.alert("Sorry, the resume could not be generated. Please try again.");
+  }
+};
+
+const buildResume = async (rawProfile) => {
   const profile = normalizeStudentProfile(rawProfile);
   const pdf = new jsPDF({ unit: "pt", format: "a4" });
   const font = await loadFonts(pdf);
@@ -64,8 +75,11 @@ export const exportATSResume = async (rawProfile) => {
     y += gap;
   };
 
+  // Height of the next text block, so headings and entries are never split from their first lines.
+  const blockHeight = (text, size = 10.5) => (text ? pdf.splitTextToSize(String(text), maxWidth).length * size * 1.4 : 0);
+
   const heading = (title) => {
-    ensureSpace(40);
+    ensureSpace(30 + 2 * 10.5 * 1.4);
     y += 10;
     pdf.setFont(font, "bold");
     pdf.setFontSize(11.5);
@@ -114,6 +128,7 @@ export const exportATSResume = async (rawProfile) => {
   if (experience.length) {
     heading("Experience");
     experience.forEach((e) => {
+      ensureSpace(blockHeight(`${e.title}, ${e.organization}`) + 2 * 14 + 4);
       write([e.title, e.organization].filter(Boolean).join(", "), { bold: true, gap: 0, color: 0 });
       const mode = e.mode === "virtual" ? "Virtual Internship" : "Onsite Internship";
       const dates = [e.startDate, e.endDate].filter(Boolean).join(" to ");
@@ -132,6 +147,7 @@ export const exportATSResume = async (rawProfile) => {
   if (education.length) {
     heading("Education");
     education.forEach((e) => {
+      ensureSpace(blockHeight(`${e.degree}, ${e.institution}`) + 14 + 6);
       write([e.degree, e.institution].filter(Boolean).join(", "), { bold: true, gap: 0, color: 0 });
       write([e.year, e.score && `Score: ${e.score}`].filter(Boolean).join("  |  "), { size: 10, gap: 6, color: 70 });
     });

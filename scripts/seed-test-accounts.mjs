@@ -10,12 +10,12 @@
 import { readFileSync, existsSync } from "node:fs";
 import { initializeApp } from "firebase/app";
 import { connectAuthEmulator, createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword, signOut, updateProfile } from "firebase/auth";
-import { addDoc, collection, connectFirestoreEmulator, doc, getDoc, getDocs, getFirestore, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
+import { addDoc, collection, connectFirestoreEmulator, doc, getDoc, getDocs, getFirestore, query, serverTimestamp, setDoc, where } from "firebase/firestore";
 
 const PASSWORD = "alumni267";
 
-// ---------- load .env ----------
-const env = { ...process.env };
+// ---------- load .env (variables already set in the shell take precedence) ----------
+const env = {};
 for (const file of [".env", ".env.local"]) {
   if (!existsSync(file)) continue;
   for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
@@ -23,6 +23,7 @@ for (const file of [".env", ".env.local"]) {
     if (m) env[m[1]] = m[2].replace(/^["']|["']$/g, "");
   }
 }
+Object.assign(env, process.env);
 const config = {
   apiKey: env.REACT_APP_FIREBASE_API_KEY,
   authDomain: env.REACT_APP_FIREBASE_AUTH_DOMAIN,
@@ -169,16 +170,20 @@ const run = async () => {
     if (!existing.exists()) {
       await setDoc(userRef, { uid: user.uid, name: acc.name, email: acc.email, role: acc.role, createdAt: serverTimestamp() });
     }
-    await setDoc(doc(db, acc.profileCollection, user.uid), { uid: user.uid, name: acc.name, email: acc.email, ...acc.profile }, { merge: true });
+    // Posts and messages must carry the name stored in users/{uid} (enforced by the rules).
+    const displayName = existing.exists() ? existing.data().name : acc.name;
+    await setDoc(doc(db, acc.profileCollection, user.uid), { uid: user.uid, name: displayName, email: acc.email, ...acc.profile }, { merge: true });
     console.log("  ✓ profile saved");
 
     if (acc.posts.length) {
       const mine = await getDocs(query(collection(db, "posts"), where("authorUid", "==", user.uid)));
       if (mine.empty) {
         for (const p of acc.posts) {
-          const ref = await addDoc(collection(db, "posts"), {
+          const ref = doc(collection(db, "posts"));
+          await setDoc(ref, {
+            postId: ref.id,
             authorUid: user.uid,
-            authorName: acc.name,
+            authorName: displayName,
             authorRole: acc.role,
             type: p.type,
             title: p.title,
@@ -187,7 +192,6 @@ const run = async () => {
             meta: p.meta || {},
             createdAt: serverTimestamp(),
           });
-          await updateDoc(ref, { postId: ref.id });
         }
         console.log(`  ✓ ${acc.posts.length} sample posts added`);
       }
@@ -197,7 +201,7 @@ const run = async () => {
     if (msgs.empty && acc.message) {
       await addDoc(collection(db, "chatMessages"), {
         senderUid: user.uid,
-        senderName: acc.name,
+        senderName: displayName,
         senderRole: acc.role,
         text: acc.message,
         replyTo: null,

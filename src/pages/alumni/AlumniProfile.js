@@ -57,7 +57,7 @@ export const AlumniProfile = () => {
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Full name">
-            <input required className="input" value={form.name} onChange={set("name")} />
+            <input required maxLength={80} className="input" value={form.name} onChange={set("name")} />
           </Field>
           <Field label="Email">
             <input className="input" value={user.email} disabled />

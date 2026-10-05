@@ -26,7 +26,7 @@ const FEATURES = [
 ];
 
 export const AuthPage = () => {
-  const { authUser, user, loading, login, register } = useAuth();
+  const { authUser, user, loading, login, logout, register } = useAuth();
   const navigate = useNavigate();
 
   const [mode, setMode] = useState("signin");
@@ -35,8 +35,9 @@ export const AuthPage = () => {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  if (loading) return <Spinner full />;
-  if (authUser && user) return <Navigate to={dashboardPath(user.role)} replace />;
+  // While submitting, stay on this page so errors from the later registration steps can be shown.
+  if (loading && !busy) return <Spinner full />;
+  if (authUser && user && !busy) return <Navigate to={dashboardPath(user.role)} replace />;
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
   const isSignUp = mode === "signup";
@@ -61,7 +62,10 @@ export const AuthPage = () => {
         });
       } else {
         userRole = await login(form.email.trim(), form.password);
-        if (!userRole) throw new Error("This account has no Alumni Hub role. Please register first.");
+        if (!userRole) {
+          await logout();
+          throw new Error("This account has no Alumni Hub role. Please register again or contact the administrator.");
+        }
       }
       navigate(dashboardPath(userRole), { replace: true });
     } catch (err) {
@@ -120,7 +124,7 @@ export const AuthPage = () => {
               <>
                 <SegmentedControl options={ROLE_OPTIONS} value={role} onChange={setRole} />
                 <Field label="Full name">
-                  <input required className="input" autoComplete="name" value={form.name} onChange={set("name")} />
+                  <input required maxLength={80} className="input" autoComplete="name" value={form.name} onChange={set("name")} />
                 </Field>
               </>
             )}
@@ -190,11 +194,11 @@ export const AuthPage = () => {
               <p className="mt-1 text-xs text-slate-500">
                 Click to fill in. Password for all: <code className="rounded bg-slate-100 px-1 font-semibold">{TEST_PASSWORD}</code>
               </p>
-              <div className="mt-3 grid grid-cols-3 gap-2">
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
                 {TEST_ACCOUNTS.map((a) => (
                   <button key={a.email} type="button" onClick={() => fillTestAccount(a.email)} className="btn btn-secondary btn-sm flex-col gap-0 py-2">
                     <span>{a.role}</span>
-                    <span className="text-[10px] font-normal text-slate-400">{a.email}</span>
+                    <span className="max-w-full truncate text-[10px] font-normal text-slate-400">{a.email}</span>
                   </button>
                 ))}
               </div>
