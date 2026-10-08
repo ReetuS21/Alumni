@@ -45,7 +45,7 @@ export const PostFeed = ({ title = "Feed" }) => {
       {loading && !posts.length ? (
         <Spinner label="Loading posts…" />
       ) : visible.length === 0 ? (
-        <EmptyState icon={Newspaper} title="Nothing here yet" text="New notices, polls, openings and tests will appear here." />
+        <EmptyState icon={Newspaper} title="Nothing here yet" text="New posts will show up here." />
       ) : (
         visible.map((p) => <PostCard key={p.id} post={p} applied={appliedIds.has(p.id)} />)
       )}

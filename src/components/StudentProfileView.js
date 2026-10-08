@@ -5,7 +5,7 @@ import { Avatar } from "./ui";
 import { avatarUrl } from "../utils/upload";
 
 const Section = ({ icon: Icon, title, children }) => (
-  <section className="card p-5">
+  <section className="card p-4 sm:p-5">
     <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
       <Icon className="h-4 w-4" /> {title}
     </h2>
@@ -36,7 +36,7 @@ export const StudentProfileView = ({ profile, actions }) => {
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
-        <section className="card p-5 sm:p-6">
+        <section className="card p-4 sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
             <Avatar name={p.name} photoURL={avatarUrl(p.photoURL, 256)} size="xl" />
             <div className="min-w-0 flex-1">

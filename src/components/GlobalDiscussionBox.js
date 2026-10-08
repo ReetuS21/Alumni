@@ -91,12 +91,12 @@ export const GlobalDiscussionBox = ({ className = "h-[560px]" }) => {
     <section className={`card flex flex-col overflow-hidden ${className}`}>
       <header className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
             <MessagesSquare className="h-4 w-4" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold">Global Discussion</h2>
-            <p className="text-xs text-slate-400">Students, teachers and alumni in one conversation</p>
+            <h2 className="text-sm font-semibold">Discussion</h2>
+            <p className="text-xs text-slate-400">Students · Teachers · Alumni</p>
           </div>
         </div>
         <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600">
@@ -124,7 +124,7 @@ export const GlobalDiscussionBox = ({ className = "h-[560px]" }) => {
         {!loading && messages.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center text-center text-sm text-slate-400">
             <MessagesSquare className="mb-2 h-8 w-8 stroke-1" />
-            No messages yet. Ask the first question!
+            No messages yet.
           </div>
         )}
         {messages.map((msg) => {
@@ -204,7 +204,7 @@ export const GlobalDiscussionBox = ({ className = "h-[560px]" }) => {
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) handleSend(e);
             }}
-            placeholder="Ask a question or share an answer…"
+            placeholder="Write a message…"
             className="input max-h-32 min-h-[40px] resize-none"
           />
           <button type="submit" disabled={sending || !text.trim()} className="btn btn-primary h-10 shrink-0 px-3" aria-label="Send">

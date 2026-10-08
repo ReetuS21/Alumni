@@ -13,7 +13,7 @@ export const SearchStudents = () => {
 
   return (
     <>
-      <PageHeader title="Search Students" subtitle="Find juniors by what they can do. Click skills to filter, then shortlist students for a referral." />
+      <PageHeader title="Search Students" subtitle="Filter by skills and shortlist for referrals." />
       {ui}
       {error && <Alert tone="error">Could not load students: {error.message}</Alert>}
       {loading ? (

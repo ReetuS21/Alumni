@@ -9,11 +9,12 @@ export const Spinner = ({ label = "Loading…", full = false }) => (
   </div>
 );
 
+/** Page title. The subtitle is a short phrase and is hidden on phones to save space. */
 export const PageHeader = ({ title, subtitle, actions }) => (
   <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-    <div>
-      <h1 className="text-xl font-bold tracking-tight sm:text-2xl">{title}</h1>
-      {subtitle && <p className="mt-1 text-sm text-slate-500">{subtitle}</p>}
+    <div className="min-w-0">
+      <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{title}</h1>
+      {subtitle && <p className="mt-0.5 hidden text-sm text-slate-500 sm:block">{subtitle}</p>}
     </div>
     {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
   </div>
@@ -27,25 +28,26 @@ const TONES = {
   rose: "bg-rose-50 text-rose-600",
 };
 
-export const StatCard = ({ label, value, icon: Icon, tone = "blue", hint }) => (
-  <div className="card flex items-center gap-4 p-4">
+/** `compact` hides the icon on phones (for rows of three). */
+export const StatCard = ({ label, value, icon: Icon, tone = "blue", hint, compact = false }) => (
+  <div className="card flex items-center gap-3 p-3.5 sm:gap-4 sm:p-4">
     {Icon && (
-      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${TONES[tone]}`}>
-        <Icon className="h-5 w-5" />
+      <div className={`${compact ? "hidden sm:flex" : "flex"} h-9 w-9 shrink-0 items-center justify-center rounded-lg sm:h-10 sm:w-10 ${TONES[tone]}`}>
+        <Icon className="h-[18px] w-[18px]" />
       </div>
     )}
     <div className="min-w-0">
-      <p className="truncate text-xs font-medium text-slate-500">{label}</p>
-      <p className="text-2xl font-bold tracking-tight text-slate-900">{value ?? "–"}</p>
-      {hint && <p className="truncate text-[11px] text-slate-400">{hint}</p>}
+      <p className="truncate text-xs text-slate-500">{label}</p>
+      <p className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">{value ?? "–"}</p>
+      {hint && <p className="hidden truncate text-[11px] text-slate-400 sm:block">{hint}</p>}
     </div>
   </div>
 );
 
 export const EmptyState = ({ icon: Icon = Info, title, text, action }) => (
-  <div className="card flex flex-col items-center px-6 py-12 text-center">
-    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
-      <Icon className="h-6 w-6" />
+  <div className="card flex flex-col items-center px-6 py-10 text-center sm:py-12">
+    <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+      <Icon className="h-5 w-5" />
     </div>
     <h3 className="text-sm font-semibold">{title}</h3>
     {text && <p className="mt-1 max-w-sm text-sm text-slate-500">{text}</p>}
@@ -174,11 +176,11 @@ export const SegmentedControl = ({ options, value, onChange }) => (
           key={opt.value}
           type="button"
           onClick={() => onChange(opt.value)}
-          className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition sm:text-sm ${
+          className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-medium transition sm:px-3 sm:text-sm ${
             active ? "bg-white text-blue-700 shadow-sm" : "text-slate-500 hover:text-slate-800"
           }`}
         >
-          {Icon && <Icon className="h-4 w-4" />}
+          {Icon && <Icon className="hidden h-4 w-4 sm:block" />}
           {opt.label}
         </button>
       );
@@ -186,14 +188,15 @@ export const SegmentedControl = ({ options, value, onChange }) => (
   </div>
 );
 
+/** Pill filters: one scrollable row on phones, wrapping on larger screens. */
 export const FilterChips = ({ options, value, onChange }) => (
-  <div className="flex flex-wrap gap-2">
+  <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
     {options.map((o) => (
       <button
         key={o.value}
         type="button"
         onClick={() => onChange(o.value)}
-        className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset transition ${
+        className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset transition ${
           value === o.value ? "bg-blue-600 text-white ring-blue-600" : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50"
         }`}
       >

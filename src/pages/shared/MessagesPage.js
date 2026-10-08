@@ -150,7 +150,7 @@ const Thread = ({ conversationId }) => {
 
       <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto bg-slate-50/60 px-4 py-4">
         {loading && <Spinner />}
-        {!loading && messages.length === 0 && <p className="py-10 text-center text-sm text-slate-400">Say hello 👋 — messages here are private between the two of you.</p>}
+        {!loading && messages.length === 0 && <p className="py-10 text-center text-sm text-slate-400">Say hello 👋</p>}
         {messages.map((m) => {
           const mine = m.senderUid === user.uid;
           const day = formatDate(m.sentAt) || formatDate(new Date());
@@ -217,7 +217,7 @@ export const MessagesPage = () => {
   );
 
   return (
-    <div className="card grid h-[calc(100vh-7rem)] overflow-hidden md:grid-cols-[320px_1fr] lg:h-[calc(100vh-4rem)]">
+    <div className="card grid h-[calc(100dvh-11rem)] overflow-hidden md:grid-cols-[300px_1fr] lg:h-[calc(100vh-4.5rem)]">
       <aside className={`flex min-h-0 flex-col border-r border-slate-100 ${cid ? "hidden md:flex" : "flex"}`}>
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
           <h1 className="text-base font-semibold">Messages</h1>
@@ -234,7 +234,7 @@ export const MessagesPage = () => {
           ) : list.length === 0 ? (
             <div className="px-6 py-12 text-center text-sm text-slate-400">
               <MessageCircle className="mx-auto mb-2 h-8 w-8 stroke-1" />
-              No conversations yet. Start one with <strong>New</strong>, or use the Message button on someone's profile.
+              No conversations yet.
             </div>
           ) : (
             <ul className="divide-y divide-slate-100">

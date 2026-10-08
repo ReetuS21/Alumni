@@ -32,7 +32,7 @@ export const AdminContent = () => {
 
   return (
     <>
-      <PageHeader title="Content" subtitle="Publish announcements and remove anything that should not be on the platform." />
+      <PageHeader title="Content" subtitle="Announcements and moderation." />
 
       <CreatePostForm types={["notice", "poll"]} />
 

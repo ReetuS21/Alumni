@@ -98,8 +98,8 @@ export const AlumniDashboard = () => {
   return (
     <>
       <PageHeader
-        title="Alumni Dashboard"
-        subtitle="Post openings and tests, review applicants, and find juniors to refer."
+        title="Dashboard"
+        subtitle="Your openings, applicants and referrals."
         actions={
           <Link to="/alumni/search" className="btn btn-primary">
             Search students
@@ -109,14 +109,14 @@ export const AlumniDashboard = () => {
 
       {!profile?.company && (
         <Alert tone="warning">
-          Add your company and role in <Link to="/alumni/profile" className="font-semibold underline">My Profile</Link> so students can find you in the alumni directory.
+          Add your company in <Link to="/alumni/profile" className="font-semibold underline">My Profile</Link> so students can find you.
         </Alert>
       )}
 
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <StatCard label="Students on platform" value={studentCount} icon={GraduationCap} tone="blue" />
+        <StatCard label="Students" value={studentCount} icon={GraduationCap} tone="blue" />
         <StatCard label="My posts" value={posts.length} icon={Briefcase} tone="violet" />
-        <StatCard label="Applications received" value={apps.length} icon={ClipboardList} tone="amber" hint={`${apps.filter((a) => a.status === "applied").length} awaiting review`} />
+        <StatCard label="Applications" value={apps.length} icon={ClipboardList} tone="amber" hint={`${apps.filter((a) => a.status === "applied").length} awaiting review`} />
         <StatCard label="Shortlisted" value={shortlists.length} icon={Star} tone="emerald" hint={`${shortlists.filter((s) => s.status === "referred").length} referred`} />
       </div>
 
@@ -134,13 +134,13 @@ export const AlumniDashboard = () => {
           <section className="space-y-4">
             <h2 className="section-title">My posts & applicants</h2>
             {sortedPosts.length === 0 ? (
-              <EmptyState icon={Inbox} title="No posts yet" text="Publish a hiring post or a skill test above — applicants will show up here." />
+              <EmptyState icon={Inbox} title="No posts yet" text="Publish a post above to start receiving applicants." />
             ) : (
               sortedPosts.map((p) => <PostCard key={p.id} post={p} footer={p.type === "hiring" || p.type === "test" ? <Applicants applicants={appsByPost[p.id] || []} /> : null} />)
             )}
           </section>
         </div>
-        <div className="lg:col-span-5">
+        <div className="hidden lg:col-span-5 lg:block">
           <div className="lg:sticky lg:top-8">
             <GlobalDiscussionBox />
           </div>

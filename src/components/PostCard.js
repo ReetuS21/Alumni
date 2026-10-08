@@ -51,7 +51,7 @@ export const PostCard = ({ post, applied = false, footer }) => {
   };
 
   return (
-    <article className="card p-5">
+    <article className="card p-4 sm:p-5">
       <header className="flex items-start gap-3">
         <PersonAvatar uid={post.authorUid} name={post.authorName} size="sm" />
         <div className="min-w-0 flex-1">

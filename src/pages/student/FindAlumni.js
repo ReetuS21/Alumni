@@ -56,17 +56,17 @@ export const FindAlumni = ({ teacherView = false }) => {
         title={teacherView ? "Alumni" : "Find Alumni"}
         subtitle={
           teacherView
-            ? "Everyone registered as alumni. Filter the list and export it, or export the count per company."
-            : "Spot alumni at the companies you are targeting and reach out for guidance or referrals."
+            ? "Registered alumni, with counts per company."
+            : "Connect with alumni at companies you're targeting."
         }
         actions={
           teacherView && (
             <>
               <button className="btn btn-secondary" onClick={exportCompanyCounts} disabled={!alumni.length}>
-                <Download className="h-4 w-4" /> Counts by company
+                <Download className="h-4 w-4" /> By company
               </button>
               <button className="btn btn-primary" onClick={exportCsv} disabled={!filtered.length}>
-                <Download className="h-4 w-4" /> Export CSV ({filtered.length})
+                <Download className="h-4 w-4" /> Export ({filtered.length})
               </button>
             </>
           )
@@ -75,13 +75,13 @@ export const FindAlumni = ({ teacherView = false }) => {
 
       {teacherView && !loading && (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <StatCard label="Registered alumni" value={alumni.length} icon={Users} tone="violet" />
-            <StatCard label="Companies represented" value={companies.length} icon={Building2} tone="blue" />
-            <StatCard label="Graduation batches" value={batches.length} icon={GraduationCap} tone="emerald" />
+          <div className="grid grid-cols-3 gap-3 sm:gap-4">
+            <StatCard compact label="Alumni" value={alumni.length} icon={Users} tone="violet" />
+            <StatCard compact label="Companies" value={companies.length} icon={Building2} tone="blue" />
+            <StatCard compact label="Batches" value={batches.length} icon={GraduationCap} tone="emerald" />
           </div>
           {byCompany.length > 0 && (
-            <div className="card p-5">
+            <div className="card p-4 sm:p-5">
               <h2 className="section-title mb-3">Alumni by company</h2>
               <div className="flex flex-wrap gap-2">
                 {byCompany.map(([name, n]) => (
@@ -103,12 +103,12 @@ export const FindAlumni = ({ teacherView = false }) => {
         </>
       )}
 
-      <div className="card flex flex-col gap-3 p-4 sm:flex-row">
-        <div className="relative flex-1">
+      <div className="card grid grid-cols-2 gap-3 p-3 sm:flex sm:p-4">
+        <div className="relative col-span-2 flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input className="input pl-9" placeholder="Search by name, company, role, domain or city…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input className="input pl-9" placeholder="Search alumni…" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-        <select className="input sm:w-52" value={company} onChange={(e) => setCompany(e.target.value)} aria-label="Company">
+        <select className="input min-w-0 sm:w-52" value={company} onChange={(e) => setCompany(e.target.value)} aria-label="Company">
           <option value="all">All companies</option>
           {companies.map((c) => (
             <option key={c} value={c}>
@@ -116,7 +116,7 @@ export const FindAlumni = ({ teacherView = false }) => {
             </option>
           ))}
         </select>
-        <select className="input sm:w-44" value={batch} onChange={(e) => setBatch(e.target.value)} aria-label="Batch">
+        <select className="input min-w-0 sm:w-44" value={batch} onChange={(e) => setBatch(e.target.value)} aria-label="Batch">
           <option value="all">All batches</option>
           {batches.map((b) => (
             <option key={b} value={b}>
@@ -139,7 +139,7 @@ export const FindAlumni = ({ teacherView = false }) => {
           </p>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((a) => (
-              <div key={a.uid} className="card flex flex-col p-5">
+              <div key={a.uid} className="card flex flex-col p-4 sm:p-5">
                 <div className="flex items-start gap-3">
                   <PersonAvatar uid={a.uid} name={a.name} photoURL={a.photoURL} size="md" />
                   <div className="min-w-0">

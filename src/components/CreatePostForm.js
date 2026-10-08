@@ -9,7 +9,7 @@ import { Alert, Field, SegmentedControl } from "./ui";
 const TYPE_OPTIONS = {
   notice: { value: "notice", label: "Notice", icon: Megaphone },
   poll: { value: "poll", label: "Poll", icon: Vote },
-  hiring: { value: "hiring", label: "Hiring Post", icon: Briefcase },
+  hiring: { value: "hiring", label: "Hiring", icon: Briefcase },
   test: { value: "test", label: "Skill Test", icon: FlaskConical },
 };
 
@@ -50,7 +50,7 @@ export const CreatePostForm = ({ types, defaults = {}, onCreated }) => {
     try {
       await createPost(user, { type, title, body, options: cleanOptions, meta: postMeta });
       reset();
-      setMessage({ tone: "success", text: "Published to the student feed." });
+      setMessage({ tone: "success", text: "Published." });
       onCreated?.();
     } catch (err) {
       setMessage({ tone: "error", text: friendlyError(err) });
@@ -60,11 +60,8 @@ export const CreatePostForm = ({ types, defaults = {}, onCreated }) => {
   };
 
   return (
-    <form onSubmit={submit} className="card space-y-4 p-5">
-      <div>
-        <h2 className="section-title">Create a post</h2>
-        <p className="text-sm text-slate-500">Posts appear instantly in every student's feed.</p>
-      </div>
+    <form onSubmit={submit} className="card space-y-4 p-4 sm:p-5">
+      <h2 className="section-title">Create a post</h2>
 
       {types.length > 1 && (
         <SegmentedControl
@@ -109,7 +106,7 @@ export const CreatePostForm = ({ types, defaults = {}, onCreated }) => {
           <Field label="Due date">
             <input type="date" className="input" value={meta.deadline} onChange={setM("deadline")} />
           </Field>
-          <Field label="Test / challenge link (optional)" className="sm:col-span-2" hint="HackerRank, Google Form, GitHub repo…">
+          <Field label="Test / challenge link (optional)" className="sm:col-span-2" >
             <input className="input" value={meta.link} onChange={setM("link")} placeholder="https://…" />
           </Field>
         </div>

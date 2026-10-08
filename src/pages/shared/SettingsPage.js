@@ -7,7 +7,7 @@ import { friendlyError } from "../../utils/authErrors";
 import { Alert, Field, Modal, PageHeader, RoleBadge } from "../../components/ui";
 
 const Section = ({ icon: Icon, title, description, children, tone = "blue" }) => (
-  <section className="card p-5 sm:p-6">
+  <section className="card p-4 sm:p-6">
     <div className="mb-4 flex items-start gap-3">
       <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${tone === "rose" ? "bg-rose-50 text-rose-600" : "bg-blue-50 text-blue-600"}`}>
         <Icon className="h-4 w-4" />
@@ -29,7 +29,7 @@ export const EmailVerification = () => {
   if (user.emailVerified) {
     return (
       <p className="flex items-center gap-2 text-sm text-emerald-700">
-        <CheckCircle2 className="h-4 w-4" /> {user.email} is verified.
+        <CheckCircle2 className="h-4 w-4" /> Email verified
       </p>
     );
   }
@@ -49,7 +49,7 @@ export const EmailVerification = () => {
   return (
     <div className="space-y-3">
       <p className="flex items-start gap-2 text-sm text-amber-700">
-        <MailWarning className="mt-0.5 h-4 w-4 shrink-0" /> {user.email} is not verified yet. Click the link we emailed you (check spam too).
+        <MailWarning className="mt-0.5 h-4 w-4 shrink-0" /> Email not verified yet. Check your inbox (and spam).
       </p>
       <div className="flex flex-wrap gap-2">
         <button
@@ -150,7 +150,7 @@ export const SettingsPage = () => {
 
   return (
     <>
-      <PageHeader title="Settings" subtitle="Manage your login, your data and your account." />
+      <PageHeader title="Settings" subtitle="Password, data and account." />
 
       <div className="max-w-3xl space-y-6">
         <Section icon={ShieldCheck} title="Account">
@@ -171,7 +171,7 @@ export const SettingsPage = () => {
           )}
         </Section>
 
-        <Section icon={KeyRound} title="Change password" description="You will need your current password.">
+        <Section icon={KeyRound} title="Change password" description="Requires your current password.">
           <form onSubmit={submitPassword} className="grid gap-4 sm:grid-cols-3">
             <Field label="Current password">
               <input required type="password" className="input" autoComplete="current-password" value={pw.current} onChange={(e) => setPw({ ...pw, current: e.target.value })} />
@@ -195,7 +195,7 @@ export const SettingsPage = () => {
 
         {!isAdmin && (
           <>
-            <Section icon={Download} title="Download my data" description="A copy of your profile, posts, messages and applications as a JSON file.">
+            <Section icon={Download} title="Download my data" description="Your profile and activity as a JSON file.">
               <button className="btn btn-secondary" onClick={download} disabled={exporting}>
                 <Download className="h-4 w-4" /> {exporting ? "Preparing…" : "Download my data"}
               </button>
@@ -204,7 +204,7 @@ export const SettingsPage = () => {
               </Alert>
             </Section>
 
-            <Section icon={Trash2} tone="rose" title="Delete account" description="Permanently removes your login, profile, posts, discussion messages, applications and private conversations.">
+            <Section icon={Trash2} tone="rose" title="Delete account" description="Permanently removes your account and everything you created.">
               <button className="btn btn-danger" onClick={() => setDeleting(true)}>
                 <Trash2 className="h-4 w-4" /> Delete my account
               </button>

@@ -31,11 +31,11 @@ export const StudentDirectory = () => {
   return (
     <>
       <PageHeader
-        title="Student Profiles"
-        subtitle={`${students.length} registered student${students.length === 1 ? "" : "s"}. Open any profile to see full details.`}
+        title="Students"
+        subtitle={`${students.length} registered student${students.length === 1 ? "" : "s"}`}
         actions={
           <button className="btn btn-secondary" onClick={exportCsv} disabled={!filtered.length}>
-            <Download className="h-4 w-4" /> Export CSV ({filtered.length})
+            <Download className="h-4 w-4" /> Export ({filtered.length})
           </button>
         }
       />

@@ -7,7 +7,7 @@ const CONTACT = process.env.REACT_APP_CONTACT_EMAIL || "the Alumni Hub administr
 
 const Shell = ({ title, children }) => (
   <div className="min-h-screen bg-slate-50 px-4 py-10">
-    <article className="card mx-auto max-w-3xl p-6 sm:p-10">
+    <article className="card mx-auto max-w-3xl p-5 sm:p-10">
       <Link to="/" className="btn btn-ghost btn-sm -ml-2 mb-6">
         <ArrowLeft className="h-4 w-4" /> Back to Alumni Hub
       </Link>

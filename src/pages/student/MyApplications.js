@@ -26,7 +26,7 @@ export const MyApplications = () => {
 
   return (
     <>
-      <PageHeader title="My Applications" subtitle="Track the openings you applied to, the tests you submitted, and alumni who shortlisted you." />
+      <PageHeader title="Applications" subtitle="Your applications and alumni interest." />
 
       {shortlists.length > 0 && (
         <section className="space-y-3">
@@ -55,7 +55,7 @@ export const MyApplications = () => {
         {loading ? (
           <Spinner />
         ) : sorted.length === 0 ? (
-          <EmptyState icon={ClipboardList} title="No applications yet" text="Apply to hiring posts or submit solutions to skill tests from your feed." />
+          <EmptyState icon={ClipboardList} title="No applications yet" text="Apply to openings from your feed." />
         ) : (
           <div className="card divide-y divide-slate-100">
             {sorted.map((a) => (

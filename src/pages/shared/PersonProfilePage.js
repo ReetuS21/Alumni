@@ -36,7 +36,7 @@ export const PersonProfilePage = () => {
       <button onClick={() => navigate(-1)} className="btn btn-ghost btn-sm -ml-2">
         <ArrowLeft className="h-4 w-4" /> Back
       </button>
-      <section className="card max-w-3xl p-6">
+      <section className="card max-w-3xl p-4 sm:p-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
           <PersonAvatar uid={uid} name={p.name} photoURL={p.photoURL || account.photoURL} size="xl" />
           <div className="min-w-0 flex-1">

@@ -47,7 +47,7 @@ export const TeacherProfile = () => {
   return (
     <>
       <PageHeader title="My Profile" />
-      <form onSubmit={submit} className="card max-w-2xl space-y-5 p-6">
+      <form onSubmit={submit} className="card max-w-2xl space-y-5 p-4 sm:p-6">
         <div className="flex items-center gap-4">
           <PhotoUploader name={form.name} photoURL={photoURL} onChange={setPhotoURL} size="lg" />
           <div>

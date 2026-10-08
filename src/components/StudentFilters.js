@@ -76,13 +76,13 @@ export const useStudentFilters = (students) => {
   const visibleSkills = showAllSkills ? skillOptions : skillOptions.slice(0, 14);
 
   const ui = (
-    <div className="card space-y-4 p-4 sm:p-5">
-      <div className="flex flex-col gap-3 lg:flex-row">
+    <div className="card space-y-4 p-3 sm:p-5">
+      <div className="flex flex-col gap-2.5 sm:gap-3 lg:flex-row">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input className="input pl-9" placeholder="Search by name, skill, tool, city…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input className="input pl-9" placeholder="Search students…" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:flex">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:flex">
           <select className="input lg:w-44" value={location} onChange={(e) => setLocation(e.target.value)} aria-label="Location">
             <option value="all">All locations</option>
             {locationOptions.map((l) => (
@@ -110,7 +110,7 @@ export const useStudentFilters = (students) => {
 
       {skillOptions.length > 0 && (
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Skills & tools {skills.length > 0 && "· students must have all selected"}</p>
+          <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-slate-400">Skills & tools {skills.length > 0 && "· match all"}</p>
           <div className="flex flex-wrap gap-1.5">
             {visibleSkills.map((s) => {
               const on = skills.some((x) => x.toLowerCase() === s.label.toLowerCase());

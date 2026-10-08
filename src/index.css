@@ -2,41 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
-  font-family: "Open Sauce Sans";
-  src: url("./fonts/OpenSauceSans-Regular.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Open Sauce Sans";
-  src: url("./fonts/OpenSauceSans-Medium.ttf") format("truetype");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Open Sauce Sans";
-  src: url("./fonts/OpenSauceSans-SemiBold.ttf") format("truetype");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Open Sauce Sans";
-  src: url("./fonts/OpenSauceSans-Bold.ttf") format("truetype");
-  font-weight: 700 900;
-  font-style: normal;
-  font-display: swap;
-}
-
 @layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
   body {
     @apply bg-slate-50 font-sans text-slate-800 antialiased;
+    font-feature-settings: "cv11", "ss01", "ss03";
+  }
+  /* Thinner, calmer icons everywhere */
+  svg.lucide {
+    stroke-width: 1.75;
   }
   h1,
   h2,
@@ -48,10 +24,10 @@
 
 @layer components {
   .card {
-    @apply rounded-2xl border border-slate-200 bg-white shadow-sm;
+    @apply rounded-xl border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)];
   }
   .btn {
-    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-sm {
     @apply px-3 py-1.5 text-xs;
@@ -60,7 +36,7 @@
     @apply bg-blue-600 text-white shadow-sm hover:bg-blue-700;
   }
   .btn-secondary {
-    @apply border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50;
+    @apply border border-slate-200 bg-white text-slate-700 shadow-sm hover:border-slate-300 hover:bg-slate-50;
   }
   .btn-ghost {
     @apply text-slate-600 hover:bg-slate-100 hover:text-slate-900;
@@ -71,19 +47,29 @@
   .btn-success {
     @apply bg-emerald-600 text-white shadow-sm hover:bg-emerald-700;
   }
+  /* 16px text on phones stops iOS from zooming into fields */
   .input {
-    @apply block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:bg-slate-50 disabled:text-slate-500;
+    @apply block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-base sm:text-sm text-slate-900 placeholder-slate-400 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:bg-slate-50 disabled:text-slate-500;
   }
   .label {
-    @apply mb-1.5 block text-sm font-medium text-slate-700;
+    @apply mb-1.5 block text-[13px] font-medium text-slate-600;
   }
   .badge {
-    @apply inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset;
+    @apply inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset;
   }
   .chip {
     @apply inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700;
   }
   .section-title {
-    @apply text-base font-semibold text-slate-900;
+    @apply text-[15px] font-semibold tracking-tight text-slate-900;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }

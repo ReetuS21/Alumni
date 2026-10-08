@@ -48,8 +48,8 @@ export const AlumniProfile = () => {
 
   return (
     <>
-      <PageHeader title="My Profile" subtitle="Students see this in the Find Alumni directory — your company is highlighted on your card." />
-      <form onSubmit={submit} className="card max-w-3xl space-y-5 p-6">
+      <PageHeader title="My Profile" subtitle="Shown to students in the alumni directory." />
+      <form onSubmit={submit} className="card max-w-3xl space-y-5 p-4 sm:p-6">
         <div className="flex items-center gap-4">
           <PhotoUploader name={form.name} photoURL={photoURL} onChange={setPhotoURL} size="lg" />
           <div>
@@ -86,7 +86,7 @@ export const AlumniProfile = () => {
           <Field label="LinkedIn" className="sm:col-span-2">
             <input className="input" value={form.linkedin} onChange={set("linkedin")} placeholder="linkedin.com/in/username" />
           </Field>
-          <Field label="About you" className="sm:col-span-2" hint="What can you help juniors with? (mentoring, referrals, mock interviews…)">
+          <Field label="About you" className="sm:col-span-2" hint="e.g. mentoring, referrals, mock interviews">
             <textarea rows={3} maxLength={600} className="input" value={form.bio} onChange={set("bio")} />
           </Field>
         </div>

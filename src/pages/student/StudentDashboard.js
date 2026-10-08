@@ -22,29 +22,29 @@ export const StudentDashboard = () => {
 
   return (
     <>
-      <PageHeader title={`Welcome back, ${firstName}`} subtitle="New openings, notices and tests from your teachers and alumni." />
+      <PageHeader title={`Welcome back, ${firstName}`} subtitle="Latest openings, notices and tests." />
 
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <StatCard label="Open positions" value={hiring.length} icon={Briefcase} tone="blue" />
-        <StatCard label="My applications" value={apps.length} icon={ClipboardList} tone="violet" hint={`${apps.filter((a) => a.status === "shortlisted").length} shortlisted`} />
+        <StatCard label="Openings" value={hiring.length} icon={Briefcase} tone="blue" />
+        <StatCard label="Applications" value={apps.length} icon={ClipboardList} tone="violet" hint={`${apps.filter((a) => a.status === "shortlisted").length} shortlisted`} />
         <StatCard label="Alumni interest" value={referrals.length} icon={Building2} tone="amber" hint="shortlists & referrals" />
-        <StatCard label="Profile strength" value={`${completeness}%`} icon={UserRound} tone={completeness >= 80 ? "emerald" : "rose"} hint="complete profiles get found more" />
+        <StatCard label="Profile" value={`${completeness}%`} icon={UserRound} tone={completeness >= 80 ? "emerald" : "rose"} hint="aim for 80%+" />
       </div>
 
       {completeness < 80 && (
-        <div className="card flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+        <div className="card flex items-center gap-4 p-4 sm:p-5">
+          <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 sm:flex">
             <UserRound className="h-5 w-5" />
           </div>
-          <div className="flex-1">
-            <p className="font-semibold">Your profile is {completeness}% complete</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium sm:text-base">Profile {completeness}% complete</p>
             <div className="mt-2 h-2 w-full max-w-sm overflow-hidden rounded-full bg-slate-100">
               <div className="h-full rounded-full bg-blue-600" style={{ width: `${completeness}%` }} />
             </div>
-            <p className="mt-2 text-sm text-slate-500">Alumni search by skills, tools and location — a complete profile gets found more often.</p>
+            <p className="mt-2 hidden text-sm text-slate-500 sm:block">Complete profiles show up more in alumni searches.</p>
           </div>
-          <Link to="/student/profile" className="btn btn-primary">
-            Complete profile
+          <Link to="/student/profile" className="btn btn-primary btn-sm sm:px-4 sm:py-2 sm:text-sm">
+            Complete
           </Link>
         </div>
       )}
@@ -53,8 +53,8 @@ export const StudentDashboard = () => {
         <div className="lg:col-span-7">
           <PostFeed title="Feed" />
         </div>
-        <div className="lg:col-span-5">
-          <div className="lg:sticky lg:top-16">
+        <div className="hidden lg:col-span-5 lg:block">
+          <div className="lg:sticky lg:top-8">
             <GlobalDiscussionBox />
           </div>
         </div>

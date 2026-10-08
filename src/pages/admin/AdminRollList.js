@@ -112,7 +112,7 @@ export const AdminRollList = () => {
     <>
       <PageHeader
         title="Roll List"
-        subtitle="Add the emails of genuine students, teachers and alumni in advance. They are approved automatically when they register — everyone else waits in the approval queue."
+        subtitle="Emails on this list are approved automatically at sign-up."
         actions={
           <button className="btn btn-secondary" onClick={template}>
             <Download className="h-4 w-4" /> CSV template
@@ -120,7 +120,7 @@ export const AdminRollList = () => {
         }
       />
 
-      <section className="card space-y-4 p-5">
+      <section className="card space-y-4 p-4 sm:p-5">
         <div className="grid gap-4 md:grid-cols-[1fr_200px]">
           <Field label="Emails (one per line — optionally email,role,name)">
             <textarea rows={5} className="input font-mono text-xs" value={text} onChange={(e) => setText(e.target.value)} placeholder={"student1@college.edu\nteacher1@college.edu,teacher,Dr. Name\nalum@company.com,alumni"} />
@@ -160,7 +160,7 @@ export const AdminRollList = () => {
         {loading ? (
           <Spinner />
         ) : rows.length === 0 ? (
-          <EmptyState icon={ListChecks} title={list.length ? "No matches" : "The roll list is empty"} text={list.length ? "Try a different search." : "Paste emails above or upload a CSV from your department."} />
+          <EmptyState icon={ListChecks} title={list.length ? "No matches" : "The roll list is empty"} text={list.length ? "Try a different search." : "Paste emails or upload a CSV."} />
         ) : (
           <ul className="card divide-y divide-slate-100">
             {rows.map((r) => {

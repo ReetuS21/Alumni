@@ -8,20 +8,20 @@ const CONTENT = {
   pending: {
     icon: Clock,
     tone: "bg-amber-50 text-amber-600",
-    title: "Your account is waiting for approval",
-    text: "Thanks for registering! The administrator checks every new account to make sure it is genuine. You will be taken to your dashboard automatically as soon as it is approved — you can keep this page open or come back later.",
+    title: "Waiting for approval",
+    text: "Every new account is reviewed. You'll be let in automatically once it's approved.",
   },
   rejected: {
     icon: XCircle,
     tone: "bg-rose-50 text-rose-600",
-    title: "Your registration was not approved",
-    text: "The administrator could not verify this account. If you think this is a mistake, please contact your institute.",
+    title: "Registration not approved",
+    text: "This account couldn't be verified. Contact your institute if this is a mistake.",
   },
   suspended: {
     icon: Ban,
     tone: "bg-rose-50 text-rose-600",
-    title: "Your account has been suspended",
-    text: "Access to Alumni Hub has been paused by the administrator. Please contact your institute for help.",
+    title: "Account suspended",
+    text: "Access has been paused. Contact your institute for help.",
   },
 };
 

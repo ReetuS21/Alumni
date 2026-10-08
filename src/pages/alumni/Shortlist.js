@@ -49,7 +49,7 @@ const NoteEditor = ({ entry }) => {
         rows={2}
         className="input text-sm"
         disabled={status === "loading"}
-        placeholder="Private note — only you can see this (e.g. good fit for SDE-1 role)"
+        placeholder="Private note (only you can see this)"
         value={note}
         onChange={(e) => {
           setNote(e.target.value);
@@ -58,7 +58,7 @@ const NoteEditor = ({ entry }) => {
         onBlur={save}
       />
       <p className="mt-1 text-[11px] text-slate-400">
-        {status === "saving" ? "Saving…" : status === "error" ? "Could not save the note." : status === "dirty" ? "Unsaved — click outside to save" : "Private note · saved"}
+        {status === "saving" ? "Saving…" : status === "error" ? "Could not save" : status === "dirty" ? "Unsaved" : "Saved"}
       </p>
     </div>
   );
@@ -85,7 +85,7 @@ export const Shortlist = () => {
 
   return (
     <>
-      <PageHeader title="Shortlist & Referrals" subtitle="Students you shortlisted. Mark them as referred once you have submitted a referral." />
+      <PageHeader title="Shortlist" subtitle="Students you shortlisted and referred." />
 
       <FilterChips
         options={[
@@ -105,7 +105,7 @@ export const Shortlist = () => {
         <EmptyState
           icon={Star}
           title="No students here yet"
-          text="Shortlist students from the search page to build your referral pipeline."
+          text="Shortlist students from Search."
           action={
             <Link to="/alumni/search" className="btn btn-primary">
               Search students
@@ -115,7 +115,7 @@ export const Shortlist = () => {
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {visible.map((e) => (
-            <div key={e.id} className="card space-y-3 p-5">
+            <div key={e.id} className="card space-y-3 p-4 sm:p-5">
               <div className="flex items-start gap-3">
                 <PersonAvatar uid={e.studentUid} name={e.studentName} size="md" />
                 <div className="min-w-0 flex-1">

@@ -27,7 +27,7 @@ for (const file of [".env", ".env.local"]) {
 }
 Object.assign(env, process.env);
 const PASSWORD = env.SUPER_ADMIN_PASSWORD || "alumni267";
-const DEMO_PASSWORD = "alumni267";
+const DEMO_PASSWORD = env.DEMO_PASSWORD || "alumni267";
 const config = {
   apiKey: env.REACT_APP_FIREBASE_API_KEY,
   authDomain: env.REACT_APP_FIREBASE_AUTH_DOMAIN,

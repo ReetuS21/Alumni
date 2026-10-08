@@ -38,10 +38,10 @@ export const AdminUsers = () => {
     <>
       <PageHeader
         title="Users"
-        subtitle="Approve new registrations, suspend accounts and review who is on the platform."
+        subtitle="Approve, suspend and review accounts."
         actions={
           <button className="btn btn-secondary" onClick={exportCsv} disabled={!filtered.length}>
-            <Download className="h-4 w-4" /> Export CSV ({filtered.length})
+            <Download className="h-4 w-4" /> Export ({filtered.length})
           </button>
         }
       />

@@ -12,9 +12,10 @@ const ROLE_OPTIONS = [
 ];
 
 const FEATURES = [
-  { icon: MessagesSquare, text: "One live discussion space for students, teachers and alumni" },
-  { icon: FileText, text: "Build your profile once and export an ATS-friendly resume" },
-  { icon: ShieldCheck, text: "Alumni find juniors by skill and refer them directly" },
+  { icon: Briefcase, title: "Opportunities", text: "Openings and referrals from alumni." },
+  { icon: FileText, title: "Profile & resume", text: "One profile, an ATS-ready PDF." },
+  { icon: MessagesSquare, title: "Mentorship", text: "Ask questions, message alumni." },
+  { icon: ShieldCheck, title: "Verified members", text: "Every account is reviewed." },
 ];
 
 export const AuthPage = () => {
@@ -97,42 +98,61 @@ export const AuthPage = () => {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* Brand panel */}
-      <div className="relative hidden overflow-hidden bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 p-12 text-white lg:flex lg:flex-col lg:justify-between">
-        <div className="flex items-center gap-3">
+      <div className="relative hidden overflow-hidden bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 p-12 text-white lg:flex lg:flex-col lg:justify-between xl:p-16">
+        {/* soft background shapes */}
+        <div className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-32 -left-20 h-96 w-96 rounded-full bg-indigo-400/20 blur-3xl" />
+
+        <div className="relative flex items-center gap-3">
           <img src={`${process.env.PUBLIC_URL}/alumnihublogo.png`} alt="" className="h-11 w-11 rounded-xl bg-white/10 object-cover" />
           <span className="text-xl font-bold">Alumni Hub</span>
         </div>
-        <div className="max-w-md space-y-8">
-          <h1 className="text-4xl font-bold leading-tight text-white">One campus, three roles, one conversation.</h1>
-          <p className="text-lg text-blue-100">A profile that works as a resume, and a network that turns into referrals.</p>
-          <ul className="space-y-4">
-            {FEATURES.map(({ icon: Icon, text }) => (
-              <li key={text} className="flex items-start gap-3 text-blue-50">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/15">
-                  <Icon className="h-4 w-4" />
-                </span>
-                <span className="pt-1 text-sm">{text}</span>
+
+        <div className="relative max-w-lg space-y-10">
+          <div className="space-y-5">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-blue-50 ring-1 ring-inset ring-white/20">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+              Alumni &amp; student network
+            </span>
+            <h1 className="text-4xl font-semibold leading-[1.15] tracking-tight text-white xl:text-[44px]">
+              Where your campus <span className="text-blue-200">connects to careers.</span>
+            </h1>
+            <p className="max-w-md text-base leading-relaxed text-blue-100/90">
+              Students, faculty and alumni — sharing opportunities, mentorship and referrals.
+            </p>
+          </div>
+
+          <ul className="grid grid-cols-2 gap-x-8 gap-y-6 border-t border-white/15 pt-8">
+            {FEATURES.map(({ icon: Icon, title, text }) => (
+              <li key={title} className="space-y-2">
+                <Icon className="h-5 w-5 text-blue-200" />
+                <p className="text-sm font-medium text-white">{title}</p>
+                <p className="text-[13px] leading-snug text-blue-100/75">{text}</p>
               </li>
             ))}
           </ul>
         </div>
-        <p className="text-xs text-blue-200">MCA Project · Role-Based Networking and Referral Platform</p>
+
+        <p className="relative text-xs text-blue-200">© {new Date().getFullYear()} Alumni Hub · Students · Faculty · Alumni</p>
       </div>
 
       {/* Form panel */}
       <div className="flex items-center justify-center bg-slate-50 px-4 py-10 sm:px-8">
         <div className="w-full max-w-md">
-          <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <img src={`${process.env.PUBLIC_URL}/alumnihublogo.png`} alt="" className="h-10 w-10 rounded-xl" />
-            <span className="text-xl font-bold">Alumni Hub</span>
+          <div className="mb-8 lg:hidden">
+            <div className="flex items-center gap-3">
+              <img src={`${process.env.PUBLIC_URL}/alumnihublogo.png`} alt="" className="h-10 w-10 rounded-xl" />
+              <span className="text-xl font-semibold tracking-tight">Alumni Hub</span>
+            </div>
+            <p className="mt-2 text-sm text-slate-500">Where your campus connects to careers.</p>
           </div>
 
-          <h2 className="text-2xl font-bold tracking-tight">{isReset ? "Reset your password" : isSignUp ? "Create your account" : "Welcome back"}</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">{isReset ? "Reset your password" : isSignUp ? "Create your account" : "Welcome back"}</h2>
           <p className="mt-1 text-sm text-slate-500">
             {isReset
-              ? "Enter the email you registered with and we will send you a link to choose a new password."
+              ? "We'll email you a reset link."
               : isSignUp
-              ? "Choose your role. New accounts are checked by the administrator before they can be used."
+              ? "Choose your role to get started."
               : "Sign in to continue to your dashboard."}
           </p>
 

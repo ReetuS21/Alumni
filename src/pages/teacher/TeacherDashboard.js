@@ -26,24 +26,24 @@ export const TeacherDashboard = () => {
 
   return (
     <>
-      <PageHeader title="Teacher Dashboard" subtitle="Publish notices and polls, follow the discussion, and review student profiles." />
+      <PageHeader title="Dashboard" subtitle="Notices, polls and your students." />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Link to="/teacher/students" className="block rounded-2xl transition hover:-translate-y-0.5 hover:shadow-md">
-          <StatCard label="Registered students" value={counts.student} icon={GraduationCap} tone="blue" hint="View & export →" />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+        <Link to="/teacher/students" className="block rounded-xl transition hover:-translate-y-0.5 hover:shadow-md">
+          <StatCard label="Students" value={counts.student} icon={GraduationCap} tone="blue" hint="View & export" />
         </Link>
-        <Link to="/teacher/alumni" className="block rounded-2xl transition hover:-translate-y-0.5 hover:shadow-md">
-          <StatCard label="Registered alumni" value={counts.alumni} icon={Building2} tone="violet" hint="View & export →" />
+        <Link to="/teacher/alumni" className="block rounded-xl transition hover:-translate-y-0.5 hover:shadow-md">
+          <StatCard label="Alumni" value={counts.alumni} icon={Building2} tone="violet" hint="View & export" />
         </Link>
-        <StatCard label="My posts" value={myPosts} icon={FileText} tone="emerald" hint={`${posts.length} posts in total`} />
+        <StatCard label="My posts" value={myPosts} icon={FileText} tone="emerald" hint={`${posts.length} in total`} />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-12">
         <div className="space-y-6 lg:col-span-7">
           <CreatePostForm types={["notice", "poll"]} />
-          <PostFeed title="Student feed" />
+          <PostFeed title="Feed" />
         </div>
-        <div className="lg:col-span-5">
+        <div className="hidden lg:col-span-5 lg:block">
           <div className="lg:sticky lg:top-8">
             <GlobalDiscussionBox />
           </div>

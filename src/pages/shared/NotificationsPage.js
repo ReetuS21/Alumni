@@ -42,11 +42,11 @@ export const NotificationsPage = () => {
     <>
       <PageHeader
         title="Notifications"
-        subtitle="Updates about your account, applications, shortlists and new posts."
+        subtitle="Updates on your account and activity."
         actions={
           unreadNotifications > 0 && (
             <button className="btn btn-secondary" onClick={() => markAllNotificationsRead(notifications).catch(() => {})}>
-              <CheckCheck className="h-4 w-4" /> Mark all as read
+              <CheckCheck className="h-4 w-4" /> Mark all read
             </button>
           )
         }
@@ -54,7 +54,7 @@ export const NotificationsPage = () => {
 
       {posts.length > 0 && (
         <section className="space-y-2">
-          <h2 className="section-title">New posts since your last visit</h2>
+          <h2 className="section-title">New posts</h2>
           <ul className="card divide-y divide-slate-100">
             {posts.map((p) => {
               const Icon = POST_ICONS[p.type] || Megaphone;
@@ -86,7 +86,7 @@ export const NotificationsPage = () => {
         {notificationsLoading ? (
           <Spinner />
         ) : notifications.length === 0 ? (
-          <EmptyState icon={BellOff} title="No notifications yet" text="You'll be notified here when someone applies, shortlists you, replies to you or reviews your account." />
+          <EmptyState icon={BellOff} title="No notifications yet" text="Updates about your activity will appear here." />
         ) : (
           <ul className="card divide-y divide-slate-100">
             {notifications.map((n) => {

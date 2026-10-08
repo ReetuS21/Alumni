@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Bell,
   Building2,
@@ -26,65 +26,63 @@ import { PeopleProvider, PersonAvatar } from "../context/PeopleContext";
 import { useAllUsers } from "./admin/AdminUserTools";
 import { RoleBadge } from "./ui";
 
+// `short` is the label used in the phone tab bar; `tab` marks the pages that get a tab there.
 const NAV = {
   student: [
-    { to: "/student", label: "Dashboard", icon: LayoutDashboard, end: true },
-    { to: "/student/profile", label: "Profile & Resume", icon: UserRound },
-    { to: "/student/alumni", label: "Find Alumni", icon: Search },
+    { to: "/student", label: "Dashboard", short: "Home", icon: LayoutDashboard, end: true, tab: true },
+    { to: "/student/profile", label: "Profile & Resume", short: "Profile", icon: UserRound, tab: true },
+    { to: "/student/alumni", label: "Find Alumni", short: "Alumni", icon: Search, tab: true },
     { to: "/student/applications", label: "My Applications", icon: ClipboardList },
-    { to: "/discussion", label: "Discussion", icon: MessagesSquare },
+    { to: "/discussion", label: "Discussion", short: "Chat", icon: MessagesSquare, tab: true },
   ],
   teacher: [
-    { to: "/teacher", label: "Dashboard", icon: LayoutDashboard, end: true },
-    { to: "/teacher/students", label: "Student Profiles", icon: Users },
-    { to: "/teacher/alumni", label: "Alumni", icon: Building2 },
-    { to: "/discussion", label: "Discussion", icon: MessagesSquare },
+    { to: "/teacher", label: "Dashboard", short: "Home", icon: LayoutDashboard, end: true, tab: true },
+    { to: "/teacher/students", label: "Students", short: "Students", icon: Users, tab: true },
+    { to: "/teacher/alumni", label: "Alumni", short: "Alumni", icon: Building2, tab: true },
+    { to: "/discussion", label: "Discussion", short: "Chat", icon: MessagesSquare, tab: true },
     { to: "/teacher/profile", label: "My Profile", icon: UserRound },
   ],
   alumni: [
-    { to: "/alumni", label: "Dashboard", icon: LayoutDashboard, end: true },
-    { to: "/alumni/search", label: "Search Students", icon: UserSearch },
-    { to: "/alumni/shortlist", label: "Shortlist & Referrals", icon: Star },
-    { to: "/discussion", label: "Discussion", icon: MessagesSquare },
+    { to: "/alumni", label: "Dashboard", short: "Home", icon: LayoutDashboard, end: true, tab: true },
+    { to: "/alumni/search", label: "Search Students", short: "Search", icon: UserSearch, tab: true },
+    { to: "/alumni/shortlist", label: "Shortlist", short: "Shortlist", icon: Star, tab: true },
+    { to: "/discussion", label: "Discussion", short: "Chat", icon: MessagesSquare, tab: true },
     { to: "/alumni/profile", label: "My Profile", icon: UserRound },
   ],
   admin: [
-    { to: "/admin", label: "Overview", icon: LayoutDashboard, end: true },
-    { to: "/admin/users", label: "Users & Approvals", icon: ShieldCheck },
-    { to: "/admin/roll-list", label: "Roll List", icon: ListChecks },
-    { to: "/admin/content", label: "Content", icon: FileText },
+    { to: "/admin", label: "Overview", short: "Overview", icon: LayoutDashboard, end: true, tab: true },
+    { to: "/admin/users", label: "Users", short: "Users", icon: ShieldCheck, tab: true, badge: "pending" },
+    { to: "/admin/roll-list", label: "Roll List", short: "Roll list", icon: ListChecks, tab: true },
+    { to: "/admin/content", label: "Content", short: "Content", icon: FileText, tab: true },
     { to: "/discussion", label: "Discussion", icon: MessagesSquare },
   ],
 };
 
 // Shown for every role, below the role's own pages.
 const COMMON_NAV = [
-  { to: "/messages", label: "Messages", icon: MessageCircle, badge: "messages" },
+  { to: "/messages", label: "Messages", short: "Messages", icon: MessageCircle, badge: "messages" },
   { to: "/notifications", label: "Notifications", icon: Bell, badge: "bell" },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
 
-const CountBadge = ({ count }) =>
+const CountBadge = ({ count, className = "ml-auto" }) =>
   count > 0 ? (
-    <span className="ml-auto min-w-[1.25rem] rounded-full bg-blue-600 px-1.5 py-0.5 text-center text-[11px] font-bold leading-none text-white">
+    <span className={`min-w-[1.125rem] rounded-full bg-blue-600 px-1.5 py-0.5 text-center text-[10px] font-semibold leading-none text-white ${className}`}>
       {count > 99 ? "99+" : count}
     </span>
   ) : null;
 
-/** Pending-approval count for the admin's "Users & Approvals" link. */
+/** Pending-approval count for the admin's "Users" link. */
 const usePendingCount = (enabled) => {
   const { users } = useAllUsers(enabled);
   return users.filter((u) => u.status === "pending").length;
 };
 
-const Brand = () => (
-  <div className="flex items-center gap-3">
-    <img src={`${process.env.PUBLIC_URL}/alumnihublogo.png`} alt="" className="h-9 w-9 rounded-xl object-cover shadow-sm" />
-    <div>
-      <p className="text-base font-bold leading-tight tracking-tight text-slate-900">Alumni Hub</p>
-      <p className="text-[11px] font-medium text-slate-400">Students · Teachers · Alumni</p>
-    </div>
-  </div>
+const Brand = ({ compact = false }) => (
+  <Link to="/" className="flex items-center gap-2.5">
+    <img src={`${process.env.PUBLIC_URL}/alumnihublogo.png`} alt="" className={`${compact ? "h-8 w-8" : "h-9 w-9"} rounded-lg object-cover`} />
+    <span className="text-[15px] font-semibold tracking-tight text-slate-900">Alumni Hub</span>
+  </Link>
 );
 
 const NavItem = ({ to, label, icon: Icon, end, count, onNavigate }) => (
@@ -93,14 +91,18 @@ const NavItem = ({ to, label, icon: Icon, end, count, onNavigate }) => (
     end={end}
     onClick={onNavigate}
     className={({ isActive }) =>
-      `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
-        isActive ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+      `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
+        isActive ? "bg-slate-100 font-medium text-slate-900" : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
       }`
     }
   >
-    <Icon className="h-[18px] w-[18px] shrink-0" />
-    {label}
-    <CountBadge count={count} />
+    {({ isActive }) => (
+      <>
+        <Icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? "text-blue-600" : ""}`} />
+        {label}
+        <CountBadge count={count} />
+      </>
+    )}
   </NavLink>
 );
 
@@ -110,12 +112,14 @@ const SidebarContent = ({ user, counts, onNavigate, onLogout }) => (
       <div className="px-2 pt-1">
         <Brand />
       </div>
-      <nav className="space-y-1">
+      <nav className="space-y-0.5">
+        <p className="px-3 pb-1 text-[11px] font-medium uppercase tracking-wider text-slate-400">Menu</p>
         {(NAV[user?.role] || []).map((item) => (
-          <NavItem key={item.to} {...item} count={item.to === "/admin/users" ? counts.pending : 0} onNavigate={onNavigate} />
+          <NavItem key={item.to} {...item} count={counts[item.badge] || 0} onNavigate={onNavigate} />
         ))}
       </nav>
-      <nav className="space-y-1 border-t border-slate-100 pt-4">
+      <nav className="space-y-0.5">
+        <p className="px-3 pb-1 text-[11px] font-medium uppercase tracking-wider text-slate-400">Account</p>
         {COMMON_NAV.map((item) => (
           <NavItem key={item.to} {...item} count={counts[item.badge] || 0} onNavigate={onNavigate} />
         ))}
@@ -123,23 +127,45 @@ const SidebarContent = ({ user, counts, onNavigate, onLogout }) => (
     </div>
 
     {user && (
-      <div className="mt-6 space-y-2 border-t border-slate-100 pt-4">
+      <div className="mt-6 space-y-1 border-t border-slate-100 pt-4">
         <div className="flex items-center gap-3 px-2">
           <PersonAvatar uid={user.uid} name={user.name} photoURL={user.photoURL} size="sm" />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-slate-900">{user.name}</p>
-            <p className="truncate text-xs text-slate-400">{user.email}</p>
+            <p className="truncate text-sm font-medium text-slate-900">{user.name}</p>
+            <RoleBadge role={user.role} />
           </div>
-          <RoleBadge role={user.role} />
         </div>
-        <button onClick={onLogout} className="btn btn-ghost w-full justify-start text-rose-600 hover:bg-rose-50 hover:text-rose-700">
-          <LogOut className="h-4 w-4" />
+        <button onClick={onLogout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-500 transition hover:bg-rose-50 hover:text-rose-600">
+          <LogOut className="h-[18px] w-[18px]" />
           Sign out
         </button>
       </div>
     )}
   </div>
 );
+
+/** Phone-only tab bar with the role's main pages plus Messages. */
+const TabBar = ({ role, counts }) => {
+  const tabs = [...(NAV[role] || []).filter((i) => i.tab), COMMON_NAV[0]].slice(0, 5);
+  return (
+    <nav className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 backdrop-blur lg:hidden" aria-label="Main">
+      <div className="grid" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
+        {tabs.map(({ to, short, label, icon: Icon, end, badge }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            className={({ isActive }) => `relative flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition ${isActive ? "text-blue-600" : "text-slate-400"}`}
+          >
+            <Icon className="h-[22px] w-[22px]" />
+            <span className="max-w-full truncate px-1">{short || label}</span>
+            <CountBadge count={counts[badge] || 0} className="absolute left-1/2 top-1 ml-2" />
+          </NavLink>
+        ))}
+      </div>
+    </nav>
+  );
+};
 
 const Shell = () => {
   const { user, logout } = useAuth();
@@ -166,31 +192,31 @@ const Shell = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-slate-200 bg-white p-4 lg:block">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 border-r border-slate-200/80 bg-white px-3 py-4 lg:block">
         <SidebarContent user={user} counts={counts} onLogout={handleLogout} />
       </aside>
 
-      {/* Mobile top bar */}
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-slate-200 bg-white/90 px-4 backdrop-blur lg:hidden">
-        <Brand />
-        <div className="flex items-center gap-1">
-          <NavLink to="/notifications" className="btn btn-ghost relative p-2" aria-label="Notifications">
-            <Bell className="h-5 w-5" />
-            {bellCount > 0 && <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-blue-600 ring-2 ring-white" />}
+      {/* Phone top bar */}
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur lg:hidden">
+        <Brand compact />
+        <div className="-mr-2 flex items-center">
+          <NavLink to="/notifications" className="relative rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label="Notifications">
+            <Bell className="h-[22px] w-[22px]" />
+            {bellCount > 0 && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-blue-600 ring-2 ring-white" />}
           </NavLink>
-          <button className="btn btn-ghost relative p-2" onClick={() => setDrawerOpen(true)} aria-label="Open menu">
-            <Menu className="h-5 w-5" />
-            {unreadMessages + pending > 0 && <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-blue-600 ring-2 ring-white" />}
+          <button className="relative rounded-lg p-2 text-slate-500 hover:bg-slate-100" onClick={() => setDrawerOpen(true)} aria-label="Open menu">
+            <Menu className="h-[22px] w-[22px]" />
+            {pending > 0 && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-blue-600 ring-2 ring-white" />}
           </button>
         </div>
       </header>
 
-      {/* Mobile drawer */}
+      {/* Phone drawer (all pages) */}
       {drawerOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-slate-900/40" onClick={() => setDrawerOpen(false)} />
-          <div className="absolute inset-y-0 left-0 w-72 max-w-[85%] bg-white p-4 shadow-xl">
-            <button className="btn btn-ghost absolute right-3 top-3 z-10 p-1.5" onClick={() => setDrawerOpen(false)} aria-label="Close menu">
+          <div className="absolute inset-0 bg-slate-900/30 backdrop-blur-[1px]" onClick={() => setDrawerOpen(false)} />
+          <div className="absolute inset-y-0 right-0 w-72 max-w-[85%] bg-white px-3 py-4 shadow-xl">
+            <button className="absolute right-3 top-3 z-10 rounded-lg p-1.5 text-slate-500 hover:bg-slate-100" onClick={() => setDrawerOpen(false)} aria-label="Close menu">
               <X className="h-5 w-5" />
             </button>
             <SidebarContent user={user} counts={counts} onNavigate={() => setDrawerOpen(false)} onLogout={handleLogout} />
@@ -198,11 +224,13 @@ const Shell = () => {
         </div>
       )}
 
-      <div className="lg:pl-64">
-        <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <div className="lg:pl-60">
+        <main className="mx-auto max-w-6xl space-y-5 px-4 pb-24 pt-5 sm:px-6 sm:pt-6 lg:space-y-6 lg:px-8 lg:pb-10 lg:pt-8">
           <Outlet />
         </main>
       </div>
+
+      <TabBar role={user?.role} counts={counts} />
     </div>
   );
 };

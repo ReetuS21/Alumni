@@ -31,7 +31,7 @@ export const StudentProfilePage = () => {
   if (l1 || l2) return <Spinner label="Loading profile…" />;
 
   if (!profile || account.role !== "student") {
-    return <EmptyState icon={UserX} title="Student not found" text="This profile does not exist or is not a student account." action={<Link to="/" className="btn btn-secondary">Back to dashboard</Link>} />;
+    return <EmptyState icon={UserX} title="Student not found" text="This profile doesn't exist." action={<Link to="/" className="btn btn-secondary">Back to dashboard</Link>} />;
   }
 
   const isSelf = user.uid === uid;

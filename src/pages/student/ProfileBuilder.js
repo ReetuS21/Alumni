@@ -39,7 +39,7 @@ const CERT_FIELDS = [
 ];
 
 const SectionCard = ({ title, description, icon: Icon, children, action }) => (
-  <section className="card p-5 sm:p-6">
+  <section className="card p-4 sm:p-6">
     <div className="mb-4 flex items-start justify-between gap-3">
       <div className="flex items-start gap-3">
         {Icon && (
@@ -93,7 +93,7 @@ const UploadField = ({ value, placeholder, onChange }) => {
           </>
         )}
       </div>
-      {error ? <p className="mt-1 text-xs text-rose-600">{error}</p> : isUploadConfigured && <p className="mt-1 text-xs text-slate-400">Paste a link, or upload a PDF / image (max 10 MB).</p>}
+      {error ? <p className="mt-1 text-xs text-rose-600">{error}</p> : isUploadConfigured && <p className="mt-1 text-xs text-slate-400">Link, or upload a PDF / image (max 10 MB).</p>}
     </div>
   );
 };
@@ -192,7 +192,7 @@ export const ProfileBuilder = () => {
     try {
       await saveStudentProfile(user.uid, profile);
       setSavedJson(JSON.stringify(profile));
-      setMessage({ tone: "success", text: "Profile saved. Alumni and teachers now see the latest version." });
+      setMessage({ tone: "success", text: "Profile saved." });
     } catch (err) {
       setMessage({ tone: "error", text: friendlyError(err) });
     } finally {
@@ -207,17 +207,17 @@ export const ProfileBuilder = () => {
   };
 
   return (
-    <form onSubmit={handleSave} className="space-y-6 pb-20">
+    <form onSubmit={handleSave} className="space-y-5 pb-20 lg:space-y-6">
       <PageHeader
         title="Profile & Resume"
-        subtitle="Fill this in once — it powers your public profile, alumni search, and your one-click ATS resume."
+        subtitle="Powers your profile, alumni search and resume."
         actions={
           <>
             <Link to={`/students/${user.uid}`} className="btn btn-secondary">
               <Eye className="h-4 w-4" /> Preview
             </Link>
             <button type="button" className="btn btn-secondary" onClick={() => exportATSResume(profile)}>
-              <Download className="h-4 w-4" /> Export ATS resume
+              <Download className="h-4 w-4" /> Resume PDF
             </button>
           </>
         }
@@ -235,9 +235,9 @@ export const ProfileBuilder = () => {
         </div>
       </div>
 
-      <SectionCard title="Basic details" description="Your name and headline appear at the top of your resume.">
+      <SectionCard title="Basic details" description="Shown at the top of your resume.">
         <div className="flex flex-col gap-6 sm:flex-row">
-          <PhotoUploader name={profile.name} photoURL={profile.photoURL} onChange={handlePhoto} note="Shown on your profile only — never on the ATS resume." />
+          <PhotoUploader name={profile.name} photoURL={profile.photoURL} onChange={handlePhoto} note="Not shown on your resume." />
           <div className="grid flex-1 gap-4 sm:grid-cols-2">
             <Field label="Full name">
               <input required maxLength={80} className="input" value={profile.name} onChange={setInput("name")} />
@@ -258,21 +258,21 @@ export const ProfileBuilder = () => {
         </div>
       </SectionCard>
 
-      <SectionCard title="Professional summary" description="2–4 sentences about your strengths and what you are looking for.">
+      <SectionCard title="Professional summary" description="2–4 sentences.">
         <textarea rows={4} maxLength={1200} className="input" value={profile.summary} onChange={setInput("summary")} placeholder="MCA student with hands-on experience in…" />
         <p className="mt-1 text-right text-xs text-slate-400">{profile.summary.length}/1200</p>
       </SectionCard>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <SectionCard title="Skills" description="Press Enter after each skill. Alumni search by these.">
+        <SectionCard title="Skills" description="Press Enter to add.">
           <TagInput value={profile.skills} onChange={set("skills")} placeholder="e.g. React" suggestions={SKILL_SUGGESTIONS} />
         </SectionCard>
-        <SectionCard title="Tools & technologies" description="Software, platforms and frameworks you use.">
+        <SectionCard title="Tools & technologies" description="Software and platforms.">
           <TagInput value={profile.tools} onChange={set("tools")} placeholder="e.g. Git" suggestions={TOOL_SUGGESTIONS} />
         </SectionCard>
       </div>
 
-      <SectionCard title="Experience" icon={Briefcase} description="Mark each entry as an onsite or virtual internship.">
+      <SectionCard title="Experience" icon={Briefcase} description="Onsite or virtual internships.">
         <RepeatableList items={profile.experience} onChange={set("experience")} fields={EXPERIENCE_FIELDS} empty={{ title: "", organization: "", mode: "onsite", startDate: "", endDate: "", description: "" }} emptyText="No experience added yet." />
       </SectionCard>
 
@@ -288,7 +288,7 @@ export const ProfileBuilder = () => {
         <SectionCard title="Languages known">
           <TagInput value={profile.languages} onChange={set("languages")} placeholder="e.g. English" suggestions={LANGUAGE_SUGGESTIONS} />
         </SectionCard>
-        <SectionCard title="Links" description="Portfolio, LinkedIn and other profiles.">
+        <SectionCard title="Links">
           <div className="grid gap-3">
             <Field label="LinkedIn">
               <input className="input" value={profile.links.linkedin} onChange={setLink("linkedin")} placeholder="linkedin.com/in/username" />
@@ -307,10 +307,10 @@ export const ProfileBuilder = () => {
       </div>
 
       {/* Sticky save bar */}
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 backdrop-blur lg:left-64">
-        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+      <div className="fixed inset-x-0 bottom-14 z-20 border-t border-slate-200 bg-white/95 backdrop-blur lg:bottom-0 lg:left-60">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6 lg:px-8">
           <div className="min-h-[20px] text-sm">
-            {message ? <Alert tone={message.tone}>{message.text}</Alert> : <span className="text-slate-500">{dirty ? "You have unsaved changes." : "All changes saved."}</span>}
+            {message ? <Alert tone={message.tone}>{message.text}</Alert> : <span className="text-slate-500">{dirty ? "Unsaved changes" : "All changes saved"}</span>}
           </div>
           <button type="submit" className="btn btn-primary" disabled={saving || !dirty}>
             <Save className="h-4 w-4" /> {saving ? "Saving…" : "Save profile"}

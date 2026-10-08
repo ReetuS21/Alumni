@@ -79,22 +79,22 @@ export const AdminDashboard = () => {
   return (
     <>
       <PageHeader
-        title="Super Admin"
-        subtitle="Verify new accounts and keep an eye on everything happening on Alumni Hub."
+        title="Overview"
+        subtitle="Approvals and platform activity."
         actions={
-          <Link to="/admin/users" className="btn btn-primary">
+          <Link to="/admin/users" className="btn btn-primary hidden sm:inline-flex">
             Manage users
           </Link>
         }
       />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
-        <StatCard label="Pending" value={loading ? null : pending.length} icon={Clock} tone="amber" />
-        <StatCard label="Students" value={loading ? null : approved("student")} icon={GraduationCap} tone="blue" />
-        <StatCard label="Teachers" value={loading ? null : approved("teacher")} icon={Presentation} tone="emerald" />
-        <StatCard label="Alumni" value={loading ? null : approved("alumni")} icon={Building2} tone="violet" />
-        <StatCard label="Posts" value={posts.length} icon={FileText} tone="blue" />
-        <StatCard label="Messages" value={messages} icon={MessagesSquare} tone="emerald" />
+      <div className="grid grid-cols-3 gap-3 sm:gap-4 xl:grid-cols-6">
+        <StatCard compact label="Pending" value={loading ? null : pending.length} icon={Clock} tone="amber" />
+        <StatCard compact label="Students" value={loading ? null : approved("student")} icon={GraduationCap} tone="blue" />
+        <StatCard compact label="Teachers" value={loading ? null : approved("teacher")} icon={Presentation} tone="emerald" />
+        <StatCard compact label="Alumni" value={loading ? null : approved("alumni")} icon={Building2} tone="violet" />
+        <StatCard compact label="Posts" value={posts.length} icon={FileText} tone="blue" />
+        <StatCard compact label="Messages" value={messages} icon={MessagesSquare} tone="emerald" />
       </div>
 
       <section className="space-y-3">
@@ -126,7 +126,7 @@ export const AdminDashboard = () => {
         {loading ? (
           <Spinner />
         ) : pending.length === 0 ? (
-          <EmptyState icon={CheckCircle2} title="All caught up" text="New registrations will appear here for you to verify." />
+          <EmptyState icon={CheckCircle2} title="All caught up" text="New registrations will appear here." />
         ) : (
           <ul className="card divide-y divide-slate-100">
             {pending.map((u) => (
