@@ -73,8 +73,8 @@ export const PrivacyPage = () => (
     <section className="space-y-2">
       <H>4. Where it is stored</H>
       <p>
-        Data is stored with Google Firebase (Authentication and Cloud Firestore) and uploaded files with Cloudinary. Optional email alerts are delivered through
-        EmailJS. These providers process data on our behalf and may store it on servers outside India.
+        Data is stored with Google Firebase (Authentication and Cloud Firestore) and uploaded files with Cloudinary. These providers process data on our
+        behalf and may store it on servers outside India.
       </p>
     </section>
 

@@ -14,16 +14,14 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { ADMIN_ALERT_EMAIL, sendEmail } from "../utils/email";
 
 // ---------- Notifications ----------
 
 /**
  * In-app notification for one person (`toUid` = "admin" reaches the super admin).
  * Never throws: a failed notification must not undo the action that triggered it.
- * Pass `email` ({ toEmail, toName }) to also send an email alert when EmailJS is configured.
  */
-export const notify = async (from, { toUid, type, title, body = "", link = "" }, email = null) => {
+export const notify = async (from, { toUid, type, title, body = "", link = "" }) => {
   if (!toUid || toUid === from.uid) return;
   try {
     await addDoc(collection(db, "notifications"), {
@@ -40,7 +38,6 @@ export const notify = async (from, { toUid, type, title, body = "", link = "" },
   } catch (e) {
     console.warn("Notification not saved:", e);
   }
-  if (email?.toEmail) sendEmail({ toEmail: email.toEmail, toName: email.toName, subject: title, message: body || title, link });
 };
 
 export const markNotificationRead = (id) => updateDoc(doc(db, "notifications", id), { read: true });
@@ -55,19 +52,15 @@ export const markAllNotificationsRead = async (items) => {
 
 export const deleteNotification = (id) => deleteDoc(doc(db, "notifications", id));
 
-/** Tells the super admin about a new registration (in-app, plus email when configured). */
+/** Tells the super admin about a new registration. */
 export const notifyAdminOfRegistration = (user) =>
-  notify(
-    user,
-    {
-      toUid: "admin",
-      type: "registration",
-      title: `New ${user.role} registration: ${user.name}`,
-      body: `${user.email} is waiting for approval.`,
-      link: "/admin/users?status=pending",
-    },
-    ADMIN_ALERT_EMAIL ? { toEmail: ADMIN_ALERT_EMAIL, toName: "Super Admin" } : null
-  );
+  notify(user, {
+    toUid: "admin",
+    type: "registration",
+    title: `New ${user.role} registration: ${user.name}`,
+    body: `${user.email} is waiting for approval.`,
+    link: "/admin/users?status=pending",
+  });
 
 // ---------- Posts (Modules 3, 4, 5) ----------
 
@@ -127,17 +120,13 @@ const APPLICATION_STATUS_TEXT = {
 
 export const setApplicationStatus = async (actor, application, status) => {
   await updateDoc(doc(db, "applications", application.id), { status, updatedAt: serverTimestamp() });
-  notify(
-    actor,
-    {
-      toUid: application.studentUid,
-      type: "application_status",
-      title: `${APPLICATION_STATUS_TEXT[status] || "Application updated"}: ${application.postTitle}`,
-      body: `${actor.name} updated your application${application.company ? ` at ${application.company}` : ""}.`,
-      link: "/student/applications",
-    },
-    status === "applied" ? null : { toEmail: application.studentEmail, toName: application.studentName }
-  );
+  notify(actor, {
+    toUid: application.studentUid,
+    type: "application_status",
+    title: `${APPLICATION_STATUS_TEXT[status] || "Application updated"}: ${application.postTitle}`,
+    body: `${actor.name} updated your application${application.company ? ` at ${application.company}` : ""}.`,
+    link: "/student/applications",
+  });
 };
 
 export const withdrawApplication = (applicationId) => deleteDoc(doc(db, "applications", applicationId));
@@ -224,17 +213,13 @@ export const addToShortlist = async (alumni, student) => {
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
-  notify(
-    alumni,
-    {
-      toUid: student.uid,
-      type: "shortlist",
-      title: `${alumni.name} shortlisted you`,
-      body: "An alumnus added you to their referral shortlist. Keep your profile up to date!",
-      link: "/student/applications",
-    },
-    { toEmail: student.email, toName: student.name }
-  );
+  notify(alumni, {
+    toUid: student.uid,
+    type: "shortlist",
+    title: `${alumni.name} shortlisted you`,
+    body: "An alumnus added you to their referral shortlist. Keep your profile up to date!",
+    link: "/student/applications",
+  });
 };
 
 // Private notes live in their own collection so the student cannot read them.
@@ -245,17 +230,13 @@ export const saveShortlistNote = (id, note) => setDoc(doc(db, "shortlistNotes", 
 export const updateShortlist = async (actor, entry, data) => {
   await updateDoc(doc(db, "shortlists", entry.id), { ...data, updatedAt: serverTimestamp() });
   if (data.status === "referred") {
-    notify(
-      actor,
-      {
-        toUid: entry.studentUid,
-        type: "referral",
-        title: `${actor.name} referred you`,
-        body: "Your referral has been submitted. Watch your email for the next steps from the company.",
-        link: "/student/applications",
-      },
-      { toEmail: entry.studentEmail, toName: entry.studentName }
-    );
+    notify(actor, {
+      toUid: entry.studentUid,
+      type: "referral",
+      title: `${actor.name} referred you`,
+      body: "Your referral has been submitted. Watch your email for the next steps from the company.",
+      link: "/student/applications",
+    });
   }
 };
 
@@ -327,7 +308,7 @@ export const reviewUser = async (admin, target, status, reviewNote = "") => {
   const [title, text] = REVIEW_TEXT[status] || [];
   if (title) {
     const body = reviewNote ? `${text} Note: ${reviewNote}` : text;
-    notify(admin, { toUid: target.uid, type: "account", title, body, link: "/" }, { toEmail: target.email, toName: target.name });
+    notify(admin, { toUid: target.uid, type: "account", title, body, link: "/" });
   }
 };
 

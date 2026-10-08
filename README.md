@@ -16,7 +16,7 @@ React (Create React App) + Tailwind CSS + Firebase (Auth, Cloud Firestore), depl
 | 5. Alumni dashboard | Publish hiring posts and skill tests, review applicants (applied → shortlisted / rejected), search students with simple filters, shortlist and mark as referred, private notes. |
 | Super admin | Every new account starts **pending** until the super admin approves it. Approve / bulk-approve, reject (with a reason), suspend, reactivate, see whether the email is verified, export users, publish announcements, delete any post or message. The **Roll List** pre-approves known emails (paste or CSV) so genuine members skip the queue. |
 | Messages | Private one-to-one conversations between any two approved members, with unread badges. |
-| Notifications | In-app notifications for account review, applications, status changes, shortlists, referrals and replies, plus "new posts since your last visit". Optional email alerts. |
+| Notifications | In-app notifications for account review, applications, status changes, shortlists, referrals and replies, plus "new posts since your last visit". |
 | Privacy | Privacy Policy and Terms pages (accepted at sign-up), **Download my data** and **Delete my account** in Settings. |
 
 ## Setup
@@ -46,11 +46,10 @@ React (Create React App) + Tailwind CSS + Firebase (Auth, Cloud Firestore), depl
 | Service | Used for | Variables |
 |---|---|---|
 | [Cloudinary](https://cloudinary.com) (free) | Profile photos and certificate files | `REACT_APP_CLOUDINARY_CLOUD_NAME`, `REACT_APP_CLOUDINARY_UPLOAD_PRESET` (an **unsigned** upload preset). To allow PDF certificates to open, enable *Settings → Security → Allow delivery of PDF and ZIP files*. |
-| [EmailJS](https://www.emailjs.com) (free, 200 emails/month) | Email alerts (approval, shortlist, referral, application status, new registration) | `REACT_APP_EMAILJS_SERVICE_ID`, `REACT_APP_EMAILJS_TEMPLATE_ID`, `REACT_APP_EMAILJS_PUBLIC_KEY`, `REACT_APP_ADMIN_ALERT_EMAIL`. The template uses `{{to_email}}`, `{{to_name}}`, `{{subject}}`, `{{message}}`, `{{link}}`. |
 | Firebase App Check (reCAPTCHA v3, free) | Blocks scripts that call the database without the app | `REACT_APP_RECAPTCHA_SITE_KEY` |
 | Google Analytics for Firebase (free) | Usage statistics | `REACT_APP_FIREBASE_MEASUREMENT_ID` |
 
-Without these keys the app still works: photo upload buttons are hidden and email alerts are skipped (in-app notifications always work).
+Without these keys the app still works: photo upload buttons are replaced by a short "not set up yet" note.
 
 ## Deploying on Vercel
 
