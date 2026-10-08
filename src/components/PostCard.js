@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { Briefcase, Building2, CalendarClock, CheckCircle2, ExternalLink, FlaskConical, MapPin, Trash2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { applyToPost, deletePost } from "../services/api";
 import { formatDate, timeAgo, toUrl } from "../utils/format";
 import { friendlyError } from "../utils/authErrors";
-import { Avatar, PostTypeBadge, RoleBadge } from "./ui";
+import { PersonAvatar } from "../context/PeopleContext";
+import { PostTypeBadge, RoleBadge } from "./ui";
 import { PollWidget } from "./PollWidget";
 
 const Meta = ({ icon: Icon, children }) => (
@@ -51,10 +53,16 @@ export const PostCard = ({ post, applied = false, footer }) => {
   return (
     <article className="card p-5">
       <header className="flex items-start gap-3">
-        <Avatar name={post.authorName} size="sm" />
+        <PersonAvatar uid={post.authorUid} name={post.authorName} size="sm" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-sm font-semibold text-slate-900">{post.authorName}</span>
+            {post.authorRole === "admin" ? (
+              <span className="text-sm font-semibold text-slate-900">{post.authorName}</span>
+            ) : (
+              <Link to={`/profile/${post.authorUid}`} className="text-sm font-semibold text-slate-900 hover:text-blue-700">
+                {post.authorName}
+              </Link>
+            )}
             <RoleBadge role={post.authorRole} />
           </div>
           <p className="text-xs text-slate-400">{timeAgo(post.createdAt)}</p>

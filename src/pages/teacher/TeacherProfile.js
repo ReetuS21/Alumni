@@ -5,7 +5,8 @@ import { db } from "../../firebase";
 import { useAuth } from "../../context/AuthContext";
 import { saveTeacherProfile } from "../../services/api";
 import { friendlyError } from "../../utils/authErrors";
-import { Alert, Avatar, Field, PageHeader, RoleBadge, Spinner } from "../../components/ui";
+import { PhotoUploader } from "../../components/PhotoUploader";
+import { Alert, Field, PageHeader, RoleBadge, Spinner } from "../../components/ui";
 
 /** Deliberately short: name, email, department and designation. */
 export const TeacherProfile = () => {
@@ -13,11 +14,13 @@ export const TeacherProfile = () => {
   const [form, setForm] = useState(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(null);
+  const [photoURL, setPhotoURL] = useState("");
 
   useEffect(() => {
     getDoc(doc(db, "teacherProfiles", user.uid))
       .then((snap) => {
         const d = snap.exists() ? snap.data() : {};
+        setPhotoURL(d.photoURL || "");
         setForm({ name: d.name || user.name || "", department: d.department || "", designation: d.designation || "" });
       })
       .catch((e) => setMessage({ tone: "error", text: friendlyError(e) }));
@@ -46,7 +49,7 @@ export const TeacherProfile = () => {
       <PageHeader title="My Profile" />
       <form onSubmit={submit} className="card max-w-2xl space-y-5 p-6">
         <div className="flex items-center gap-4">
-          <Avatar name={form.name} size="lg" />
+          <PhotoUploader name={form.name} photoURL={photoURL} onChange={setPhotoURL} size="lg" />
           <div>
             <p className="text-lg font-semibold">{form.name}</p>
             <RoleBadge role="teacher" />

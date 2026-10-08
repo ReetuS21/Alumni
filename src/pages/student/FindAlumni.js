@@ -1,9 +1,12 @@
 import React, { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Briefcase, Building2, Download, ExternalLink, GraduationCap, Mail, MapPin, Search, Users } from "lucide-react";
 import { useAlumni } from "../../hooks/useDirectory";
 import { includesText, toUrl } from "../../utils/format";
 import { downloadCsv } from "../../utils/csv";
-import { Alert, Avatar, EmptyState, PageHeader, Spinner, StatCard } from "../../components/ui";
+import { PersonAvatar } from "../../context/PeopleContext";
+import { MessageButton } from "../../components/MessageButton";
+import { Alert, EmptyState, PageHeader, Spinner, StatCard } from "../../components/ui";
 
 const distinct = (list) => [...new Set(list.filter(Boolean))].sort((a, b) => a.localeCompare(b));
 
@@ -138,9 +141,11 @@ export const FindAlumni = ({ teacherView = false }) => {
             {filtered.map((a) => (
               <div key={a.uid} className="card flex flex-col p-5">
                 <div className="flex items-start gap-3">
-                  <Avatar name={a.name} size="md" />
+                  <PersonAvatar uid={a.uid} name={a.name} photoURL={a.photoURL} size="md" />
                   <div className="min-w-0">
-                    <p className="truncate font-semibold text-slate-900">{a.name}</p>
+                    <Link to={`/profile/${a.uid}`} className="block truncate font-semibold text-slate-900 hover:text-blue-700">
+                      {a.name}
+                    </Link>
                     <p className="flex items-center gap-1.5 truncate text-sm text-slate-500">
                       <Briefcase className="h-3.5 w-3.5 shrink-0" /> {a.jobRole || "Role not added"}
                     </p>
@@ -165,7 +170,8 @@ export const FindAlumni = ({ teacherView = false }) => {
                   )}
                 </div>
                 {a.bio && <p className="mt-3 line-clamp-3 text-sm text-slate-600">{a.bio}</p>}
-                <div className="mt-auto flex gap-2 pt-4">
+                <div className="mt-auto flex flex-wrap gap-2 pt-4">
+                  <MessageButton person={{ uid: a.uid, name: a.name, role: "alumni", photoURL: a.photoURL }} className="btn-primary" />
                   {a.email && (
                     <a href={`mailto:${a.email}`} className="btn btn-secondary btn-sm">
                       <Mail className="h-3.5 w-3.5" /> Email

@@ -1,18 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { collection, doc, getDoc, query } from "firebase/firestore";
-import { Ban, Check, ExternalLink, RotateCcw, X } from "lucide-react";
+import { Ban, Check, ExternalLink, MailCheck, MailWarning, RotateCcw, X } from "lucide-react";
 import { db } from "../../firebase";
 import { accountStatus, useAuth } from "../../context/AuthContext";
 import { useLiveQuery } from "../../hooks/useLive";
 import { reviewUser } from "../../services/api";
 import { formatDate, millis, toUrl } from "../../utils/format";
 import { friendlyError } from "../../utils/authErrors";
-import { Alert, Avatar, Field, Modal, RoleBadge, Spinner, StatusBadge } from "../ui";
+import { Alert, Field, Modal, RoleBadge, Spinner, StatusBadge } from "../ui";
+import { PersonAvatar } from "../../context/PeopleContext";
 
 /** Every account (admin only), newest first, with the status normalised. */
-export const useAllUsers = () => {
-  const { data, loading, error } = useLiveQuery(() => query(collection(db, "users")), []);
+export const useAllUsers = (enabled = true) => {
+  const { data, loading, error } = useLiveQuery(() => (enabled ? query(collection(db, "users")) : null), [enabled]);
   const users = data
     .filter((u) => u.role !== "admin")
     .map((u) => ({ ...u, uid: u.uid || u.id, status: accountStatus(u) }))
@@ -48,6 +49,18 @@ export const detailLines = (user, p) => {
   return [["Headline", p.designation], ["Location", p.location], ["Phone", p.phone], ["Skills", (p.skills || []).join(", ")], ["LinkedIn", p.links?.linkedin]];
 };
 
+/** Whether the person clicked the link in Firebase's verification email. */
+export const EmailBadge = ({ verified }) =>
+  verified ? (
+    <span className="badge bg-emerald-50 text-emerald-700 ring-emerald-200" title="Email address verified">
+      <MailCheck className="mr-1 h-3 w-3" /> Verified email
+    </span>
+  ) : (
+    <span className="badge bg-slate-50 text-slate-500 ring-slate-200" title="Email address not verified yet">
+      <MailWarning className="mr-1 h-3 w-3" /> Unverified email
+    </span>
+  );
+
 /** Approve / reject / suspend / reactivate buttons with a reason dialog. */
 export const ReviewActions = ({ user, size = "sm", onDone }) => {
   const { user: admin } = useAuth();
@@ -61,7 +74,7 @@ export const ReviewActions = ({ user, size = "sm", onDone }) => {
     setBusy(true);
     setError("");
     try {
-      await reviewUser(admin, user.uid, status, reviewNote.trim());
+      await reviewUser(admin, user, status, reviewNote.trim());
       setDialog(null);
       setNote("");
       onDone?.(status);
@@ -133,13 +146,14 @@ export const UserDetailsModal = ({ user, onClose }) => {
   return (
     <Modal open={Boolean(user)} onClose={onClose} title="Account details" footer={<ReviewActions user={user} size="md" onDone={onClose} />}>
       <div className="flex items-center gap-3">
-        <Avatar name={user.name} size="lg" />
+        <PersonAvatar uid={user.uid} name={user.name} photoURL={user.photoURL} size="lg" />
         <div className="min-w-0">
           <p className="truncate text-lg font-semibold">{user.name}</p>
           <p className="truncate text-sm text-slate-500">{user.email}</p>
-          <div className="mt-1 flex gap-1.5">
+          <div className="mt-1 flex flex-wrap gap-1.5">
             <RoleBadge role={user.role} />
             <StatusBadge status={user.status} />
+            <EmailBadge verified={user.emailVerified} />
           </div>
         </div>
       </div>

@@ -1,15 +1,17 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
-import { Award, Briefcase, Camera, Download, Eye, GraduationCap, Plus, Save, Trash2 } from "lucide-react";
+import { Award, Briefcase, Download, Eye, GraduationCap, Plus, Save, Trash2, Upload } from "lucide-react";
 import { db } from "../../firebase";
 import { useAuth } from "../../context/AuthContext";
-import { saveStudentProfile, uploadProfilePhoto } from "../../services/api";
+import { saveStudentProfile } from "../../services/api";
 import { newId, normalizeStudentProfile, profileCompleteness } from "../../utils/profile";
 import { exportATSResume } from "../../utils/resumeExporter";
 import { friendlyError } from "../../utils/authErrors";
+import { isUploadConfigured, uploadFile } from "../../utils/upload";
 import { TagInput } from "../../components/TagInput";
-import { Alert, Avatar, Field, PageHeader, Spinner } from "../../components/ui";
+import { PhotoUploader } from "../../components/PhotoUploader";
+import { Alert, Field, PageHeader, Spinner } from "../../components/ui";
 
 const SKILL_SUGGESTIONS = ["JavaScript", "React", "Node.js", "Python", "Java", "SQL", "Data Structures", "HTML", "CSS", "Machine Learning"];
 const TOOL_SUGGESTIONS = ["Git", "GitHub", "VS Code", "Firebase", "Docker", "Postman", "MongoDB", "MySQL", "Figma", "AWS"];
@@ -33,7 +35,7 @@ const CERT_FIELDS = [
   { key: "name", label: "Certificate name", placeholder: "AWS Cloud Practitioner", required: true },
   { key: "issuer", label: "Issued by", placeholder: "Amazon Web Services" },
   { key: "year", label: "Year", placeholder: "2025" },
-  { key: "url", label: "Credential link", placeholder: "https://…" },
+  { key: "url", label: "Credential link or file", placeholder: "https://…", type: "upload", full: true },
 ];
 
 const SectionCard = ({ title, description, icon: Icon, children, action }) => (
@@ -56,6 +58,46 @@ const SectionCard = ({ title, description, icon: Icon, children, action }) => (
   </section>
 );
 
+/** URL field with an "Upload file" button (PDF or image, stored on Cloudinary). */
+const UploadField = ({ value, placeholder, onChange }) => {
+  const { user } = useAuth();
+  const fileRef = useRef(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const pick = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setBusy(true);
+    setError("");
+    try {
+      onChange(await uploadFile(file, { folder: `alumnihub/certificates/${user.uid}`, kind: "document" }));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex gap-2">
+        <input className="input" value={value || ""} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+        {isUploadConfigured && (
+          <>
+            <input ref={fileRef} type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="hidden" onChange={pick} />
+            <button type="button" className="btn btn-secondary shrink-0" disabled={busy} onClick={() => fileRef.current?.click()}>
+              <Upload className="h-4 w-4" /> {busy ? "Uploading…" : "Upload"}
+            </button>
+          </>
+        )}
+      </div>
+      {error ? <p className="mt-1 text-xs text-rose-600">{error}</p> : isUploadConfigured && <p className="mt-1 text-xs text-slate-400">Paste a link, or upload a PDF / image (max 10 MB).</p>}
+    </div>
+  );
+};
+
 const RepeatableList = ({ items, onChange, fields, empty, emptyText }) => {
   const update = (id, key, value) => onChange(items.map((it) => (it.id === id ? { ...it, [key]: value } : it)));
   return (
@@ -74,6 +116,8 @@ const RepeatableList = ({ items, onChange, fields, empty, emptyText }) => {
                       </option>
                     ))}
                   </select>
+                ) : f.type === "upload" ? (
+                  <UploadField value={item[f.key]} placeholder={f.placeholder} onChange={(v) => update(item.id, f.key, v)} />
                 ) : f.type === "textarea" ? (
                   <textarea rows={3} className="input" value={item[f.key] || ""} placeholder={f.placeholder} onChange={(e) => update(item.id, f.key, e.target.value)} />
                 ) : (
@@ -101,9 +145,7 @@ export const ProfileBuilder = () => {
   const [profile, setProfile] = useState(null);
   const [savedJson, setSavedJson] = useState("");
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState(null);
-  const fileRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -158,27 +200,10 @@ export const ProfileBuilder = () => {
     }
   };
 
-  const handlePhoto = async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) {
-      setMessage({ tone: "error", text: "Please choose an image under 5 MB." });
-      return;
-    }
-    setUploading(true);
-    setMessage(null);
-    try {
-      const url = await uploadProfilePhoto(user.uid, file);
-      await saveStudentProfile(user.uid, { photoURL: url });
-      setProfile((p) => ({ ...p, photoURL: url }));
-      setSavedJson((s) => JSON.stringify({ ...JSON.parse(s), photoURL: url }));
-    } catch (err) {
-      console.error(err);
-      setMessage({ tone: "error", text: "Photo upload failed. Make sure Firebase Storage is enabled for this project." });
-    } finally {
-      setUploading(false);
-    }
+  // The photo is saved immediately, so record it as saved too.
+  const handlePhoto = (url) => {
+    setProfile((p) => ({ ...p, photoURL: url }));
+    setSavedJson((saved) => JSON.stringify({ ...JSON.parse(saved), photoURL: url }));
   };
 
   return (
@@ -212,14 +237,7 @@ export const ProfileBuilder = () => {
 
       <SectionCard title="Basic details" description="Your name and headline appear at the top of your resume.">
         <div className="flex flex-col gap-6 sm:flex-row">
-          <div className="flex flex-col items-center gap-2">
-            <Avatar name={profile.name} photoURL={profile.photoURL} size="xl" />
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
-            <button type="button" className="btn btn-ghost btn-sm" disabled={uploading} onClick={() => fileRef.current?.click()}>
-              <Camera className="h-3.5 w-3.5" /> {uploading ? "Uploading…" : "Change photo"}
-            </button>
-            <p className="max-w-[9rem] text-center text-[11px] text-slate-400">Shown on your profile only — never on the ATS resume.</p>
-          </div>
+          <PhotoUploader name={profile.name} photoURL={profile.photoURL} onChange={handlePhoto} note="Shown on your profile only — never on the ATS resume." />
           <div className="grid flex-1 gap-4 sm:grid-cols-2">
             <Field label="Full name">
               <input required maxLength={80} className="input" value={profile.name} onChange={setInput("name")} />

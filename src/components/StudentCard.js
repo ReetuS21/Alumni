@@ -1,7 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { MapPin } from "lucide-react";
-import { Avatar } from "./ui";
+import { PersonAvatar } from "../context/PeopleContext";
+import { MessageButton } from "./MessageButton";
 
 export const StudentCard = ({ student, actions, highlight = [] }) => {
   const skills = student.skills || [];
@@ -9,7 +10,7 @@ export const StudentCard = ({ student, actions, highlight = [] }) => {
   return (
     <div className="card flex flex-col p-4">
       <div className="flex items-start gap-3">
-        <Avatar name={student.name} photoURL={student.photoURL} size="md" />
+        <PersonAvatar uid={student.uid} name={student.name} photoURL={student.photoURL} size="md" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <Link to={`/students/${student.uid}`} className="truncate font-semibold text-slate-900 hover:text-blue-700">
@@ -34,10 +35,11 @@ export const StudentCard = ({ student, actions, highlight = [] }) => {
           {skills.length > 8 && <span className="chip text-slate-400">+{skills.length - 8}</span>}
         </div>
       )}
-      <div className="mt-auto flex items-center gap-2 pt-4">
+      <div className="mt-auto flex flex-wrap items-center gap-2 pt-4">
         <Link to={`/students/${student.uid}`} className="btn btn-secondary btn-sm">
           View profile
         </Link>
+        <MessageButton person={{ uid: student.uid, name: student.name, role: "student", photoURL: student.photoURL }} />
         {actions}
       </div>
     </div>

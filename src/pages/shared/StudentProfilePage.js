@@ -9,6 +9,7 @@ import { normalizeStudentProfile } from "../../utils/profile";
 import { exportATSResume } from "../../utils/resumeExporter";
 import { StudentProfileView } from "../../components/StudentProfileView";
 import { ShortlistButton } from "../../components/ShortlistButton";
+import { MessageButton } from "../../components/MessageButton";
 import { EmptyState, Spinner } from "../../components/ui";
 
 export const StudentProfilePage = () => {
@@ -45,6 +46,7 @@ export const StudentProfilePage = () => {
         actions={
           <>
             {user.role === "alumni" && <ShortlistButton student={profile} size="md" />}
+            <MessageButton person={{ uid, name: profile.name, role: "student", photoURL: profile.photoURL }} size="md" />
             {!isSelf && profile.email && (
               <a href={`mailto:${profile.email}`} className="btn btn-secondary">
                 <Mail className="h-4 w-4" /> Contact

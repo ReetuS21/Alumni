@@ -20,9 +20,15 @@ service cloud.firestore {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
     }
     function validName(n) { return n is string && n.size() > 0 && n.size() <= 80; }
+    function validUrl(u) { return u is string && u.size() <= 500 && (u == '' || u.matches('https://.*')); }
+    // The college roll list: an email the super admin added in advance is approved straight away.
+    function preapprovedFor(role) {
+      let p = /databases/$(database)/documents/preapproved/$(request.auth.token.email);
+      return exists(p) && get(p).data.role == role;
+    }
 
     // ---------- users ----------
-    // New accounts start "pending"; only the super admin can approve, reject or suspend them.
+    // New accounts start "pending" (unless pre-approved); only the super admin can approve, reject or suspend.
     match /users/{uid} {
       allow get: if isOwner(uid) || canRead();
       allow list: if canRead();
@@ -31,14 +37,28 @@ service cloud.firestore {
                     && request.resource.data.email == request.auth.token.email
                     && validName(request.resource.data.name)
                     && ((request.resource.data.role in ['student', 'teacher', 'alumni']
-                         && request.resource.data.status == 'pending')
+                         && (request.resource.data.status == 'pending'
+                             || (request.resource.data.status == 'approved' && preapprovedFor(request.resource.data.role))))
                         || (isAdmin() && request.resource.data.role == 'admin'
                             && request.resource.data.status == 'approved'));
-      allow update: if (isOwner(uid) && onlyChanged(['name']) && validName(request.resource.data.name))
+      allow update: if (isOwner(uid)
+                        && onlyChanged(['name', 'photoURL', 'emailVerified'])
+                        && validName(request.resource.data.name)
+                        && validUrl(request.resource.data.get('photoURL', ''))
+                        // emailVerified may only be switched on, and only once Firebase has verified the address.
+                        && (request.resource.data.get('emailVerified', false) == resource.data.get('emailVerified', false)
+                            || (request.resource.data.emailVerified == true && request.auth.token.email_verified == true)))
                     || (isAdmin() && uid != request.auth.uid
                         && onlyChanged(['status', 'reviewedAt', 'reviewedBy', 'reviewNote'])
                         && request.resource.data.status in ['pending', 'approved', 'rejected', 'suspended']);
-      allow delete: if false;
+      // People can delete their own account (Settings → Delete account).
+      allow delete: if isOwner(uid) && !isAdmin();
+    }
+
+    // ---------- pre-approved emails (managed by the super admin) ----------
+    match /preapproved/{email} {
+      allow get: if isAdmin() || (signedIn() && request.auth.token.email == email);
+      allow list, write: if isAdmin();
     }
 
     // ---------- role profiles (owners may fill them in while pending) ----------
@@ -91,7 +111,9 @@ service cloud.firestore {
                     && resource.data.postAuthorUid == request.auth.uid
                     && onlyChanged(['status', 'updatedAt'])
                     && request.resource.data.status in ['applied', 'shortlisted', 'rejected'];
-      allow delete: if (signedIn() && resource.data.studentUid == request.auth.uid && resource.data.status == 'applied')
+      // The student (withdraw / delete account), the post author (clean-up) or the admin.
+      allow delete: if (signedIn() && (resource.data.studentUid == request.auth.uid
+                                       || resource.data.postAuthorUid == request.auth.uid))
                     || isAdmin();
     }
 
@@ -104,7 +126,7 @@ service cloud.firestore {
                     && post(request.resource.data.postId).type == 'poll'
                     && request.resource.data.selectedOption in post(request.resource.data.postId).options;
       allow update: if false;
-      allow delete: if isAdmin();
+      allow delete: if (signedIn() && resource.data.uid == request.auth.uid) || isAdmin();
     }
 
     // ---------- global discussion ----------
@@ -142,12 +164,71 @@ service cloud.firestore {
       allow update: if isApproved() && resource.data.alumniUid == request.auth.uid
                     && onlyChanged(['status', 'updatedAt'])
                     && request.resource.data.status in ['shortlisted', 'referred'];
-      allow delete: if (signedIn() && resource.data.alumniUid == request.auth.uid) || isAdmin();
+      allow delete: if (signedIn() && (resource.data.alumniUid == request.auth.uid || resource.data.studentUid == request.auth.uid))
+                    || isAdmin();
     }
 
     // ---------- private alumni notes (id = alumniUid_studentUid) ----------
     match /shortlistNotes/{noteId} {
-      allow read, write: if active('alumni') && noteId.split('_')[0] == request.auth.uid;
+      allow read, write: if signedIn() && noteId.split('_')[0] == request.auth.uid && isRole('alumni');
+    }
+
+    // ---------- in-app notifications ----------
+    // toUid is a user id, or "admin" for alerts meant for the super admin (e.g. a new registration).
+    match /notifications/{id} {
+      allow read: if signedIn()
+                  && (resource.data.toUid == request.auth.uid || (resource.data.toUid == 'admin' && isAdmin()));
+      allow update: if signedIn()
+                    && (resource.data.toUid == request.auth.uid || (resource.data.toUid == 'admin' && isAdmin()))
+                    && onlyChanged(['read']);
+      allow delete: if signedIn()
+                    && (resource.data.toUid == request.auth.uid || (resource.data.toUid == 'admin' && isAdmin()));
+      allow create: if signedIn()
+                    && request.resource.data.keys().hasOnly(['toUid', 'fromUid', 'fromName', 'type', 'title', 'body', 'link', 'read', 'createdAt'])
+                    && request.resource.data.fromUid == request.auth.uid
+                    && request.resource.data.fromName == myName()
+                    && request.resource.data.toUid is string
+                    && request.resource.data.toUid != request.auth.uid
+                    && request.resource.data.read == false
+                    && request.resource.data.title is string && request.resource.data.title.size() <= 200
+                    && request.resource.data.body is string && request.resource.data.body.size() <= 500
+                    && request.resource.data.link is string && request.resource.data.link.size() <= 200
+                    // Each kind of notification can only come from the role that legitimately sends it.
+                    && ((request.resource.data.type == 'registration' && request.resource.data.toUid == 'admin')
+                        || (request.resource.data.toUid != 'admin'
+                            && ((request.resource.data.type == 'account' && isAdmin())
+                                || (request.resource.data.type == 'application' && active('student'))
+                                || (request.resource.data.type in ['application_status', 'shortlist', 'referral'] && active('alumni'))
+                                || (request.resource.data.type == 'reply' && canRead()))));
+    }
+
+    // ---------- direct messages (id = smallerUid_largerUid) ----------
+    function inConversation(cid) { return signedIn() && request.auth.uid in cid.split('_'); }
+    match /conversations/{cid} {
+      allow get: if inConversation(cid);
+      allow list: if signedIn() && request.auth.uid in resource.data.participants;
+      allow create: if canRead()
+                    && request.resource.data.participants is list
+                    && request.resource.data.participants.size() == 2
+                    && request.auth.uid in request.resource.data.participants
+                    && request.resource.data.participants[0] < request.resource.data.participants[1]
+                    && cid == request.resource.data.participants[0] + '_' + request.resource.data.participants[1];
+      allow update: if canRead() && inConversation(cid)
+                    && request.resource.data.participants == resource.data.participants
+                    && onlyChanged(['lastMessage', 'lastSenderUid', 'updatedAt', 'readAt', 'names', 'roles', 'photos']);
+      allow delete: if inConversation(cid);
+
+      match /messages/{messageId} {
+        allow read: if inConversation(cid);
+        allow create: if canRead() && inConversation(cid)
+                      && exists(/databases/$(database)/documents/conversations/$(cid))
+                      && request.resource.data.senderUid == request.auth.uid
+                      && request.resource.data.text is string
+                      && request.resource.data.text.size() > 0
+                      && request.resource.data.text.size() <= 2000;
+        allow update: if false;
+        allow delete: if inConversation(cid);
+      }
     }
   }
 }

@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { collection, getCountFromServer, query } from "firebase/firestore";
-import { Building2, CheckCircle2, Clock, FileText, GraduationCap, MessagesSquare, Presentation } from "lucide-react";
+import { Building2, Check, CheckCircle2, Clock, FileText, GraduationCap, MessagesSquare, Presentation } from "lucide-react";
 import { db } from "../../firebase";
+import { useAuth } from "../../context/AuthContext";
+import { PersonAvatar } from "../../context/PeopleContext";
+import { reviewUser } from "../../services/api";
 import { useLiveQuery } from "../../hooks/useLive";
 import { formatDate } from "../../utils/format";
-import { ReviewActions, UserDetailsModal, detailLines, useAllUsers, useRegistrationDetails } from "../../components/admin/AdminUserTools";
-import { Avatar, EmptyState, PageHeader, RoleBadge, Spinner, StatCard } from "../../components/ui";
+import { EmailBadge, ReviewActions, UserDetailsModal, detailLines, useAllUsers, useRegistrationDetails } from "../../components/admin/AdminUserTools";
+import { Alert, EmptyState, PageHeader, RoleBadge, Spinner, StatCard } from "../../components/ui";
 
-const PendingRow = ({ user, onOpen }) => {
+const PendingRow = ({ user, onOpen, checked, onCheck }) => {
   const details = useRegistrationDetails(user);
   const summary = detailLines(user, details)
     .filter(([, v]) => v)
@@ -17,12 +20,14 @@ const PendingRow = ({ user, onOpen }) => {
     .join(" · ");
   return (
     <li className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
+      <input type="checkbox" className="hidden h-4 w-4 rounded border-slate-300 sm:block" checked={checked} onChange={(e) => onCheck(e.target.checked)} aria-label={`Select ${user.name}`} />
       <button className="flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => onOpen(user)}>
-        <Avatar name={user.name} size="sm" />
+        <PersonAvatar uid={user.uid} name={user.name} size="sm" />
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="truncate font-medium text-slate-900">{user.name}</span>
             <RoleBadge role={user.role} />
+            <EmailBadge verified={user.emailVerified} />
           </div>
           <p className="truncate text-xs text-slate-500">
             {user.email} · registered {formatDate(user.createdAt) || "just now"}
@@ -41,6 +46,10 @@ export const AdminDashboard = () => {
   const { data: posts } = useLiveQuery(() => query(collection(db, "posts")), []);
   const [messages, setMessages] = useState(null);
   const [selected, setSelected] = useState(null);
+  const { user: admin } = useAuth();
+  const [checked, setChecked] = useState({});
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkError, setBulkError] = useState("");
 
   useEffect(() => {
     getCountFromServer(collection(db, "chatMessages"))
@@ -51,6 +60,21 @@ export const AdminDashboard = () => {
   const pending = users.filter((u) => u.status === "pending");
   const approved = (role) => users.filter((u) => u.role === role && u.status === "approved").length;
   const current = selected && users.find((u) => u.uid === selected.uid);
+  const chosen = pending.filter((u) => checked[u.uid]);
+
+  const approveChosen = async () => {
+    if (!window.confirm(`Approve ${chosen.length} account${chosen.length === 1 ? "" : "s"}?`)) return;
+    setBulkBusy(true);
+    setBulkError("");
+    try {
+      await Promise.all(chosen.map((u) => reviewUser(admin, u, "approved")));
+      setChecked({});
+    } catch (e) {
+      setBulkError("Some accounts could not be approved. Please try again.");
+    } finally {
+      setBulkBusy(false);
+    }
+  };
 
   return (
     <>
@@ -77,11 +101,28 @@ export const AdminDashboard = () => {
         <div className="flex items-center justify-between">
           <h2 className="section-title">Waiting for approval {pending.length > 0 && `(${pending.length})`}</h2>
           {pending.length > 0 && (
-            <Link to="/admin/users?status=pending" className="text-sm font-semibold text-blue-600 hover:underline">
-              View all
-            </Link>
+            <div className="flex items-center gap-3">
+              <label className="hidden items-center gap-2 text-sm text-slate-600 sm:flex">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-slate-300"
+                  checked={chosen.length === pending.length}
+                  onChange={(e) => setChecked(e.target.checked ? Object.fromEntries(pending.map((u) => [u.uid, true])) : {})}
+                />
+                Select all
+              </label>
+              {chosen.length > 0 && (
+                <button className="btn btn-success btn-sm" disabled={bulkBusy} onClick={approveChosen}>
+                  <Check className="h-3.5 w-3.5" /> Approve {chosen.length}
+                </button>
+              )}
+              <Link to="/admin/users?status=pending" className="text-sm font-semibold text-blue-600 hover:underline">
+                View all
+              </Link>
+            </div>
           )}
         </div>
+        <Alert tone="error">{bulkError}</Alert>
         {loading ? (
           <Spinner />
         ) : pending.length === 0 ? (
@@ -89,7 +130,7 @@ export const AdminDashboard = () => {
         ) : (
           <ul className="card divide-y divide-slate-100">
             {pending.map((u) => (
-              <PendingRow key={u.uid} user={u} onOpen={setSelected} />
+              <PendingRow key={u.uid} user={u} onOpen={setSelected} checked={Boolean(checked[u.uid])} onCheck={(on) => setChecked((c) => ({ ...c, [u.uid]: on }))} />
             ))}
           </ul>
         )}

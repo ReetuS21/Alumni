@@ -7,7 +7,9 @@ import { useAuth } from "../../context/AuthContext";
 import { useLiveQuery } from "../../hooks/useLive";
 import { getShortlistNote, removeFromShortlist, saveShortlistNote, updateShortlist } from "../../services/api";
 import { formatDate, millis } from "../../utils/format";
-import { Alert, Avatar, EmptyState, FilterChips, PageHeader, Spinner, StatusBadge } from "../../components/ui";
+import { PersonAvatar } from "../../context/PeopleContext";
+import { MessageButton } from "../../components/MessageButton";
+import { Alert, EmptyState, FilterChips, PageHeader, Spinner, StatusBadge } from "../../components/ui";
 
 const NoteEditor = ({ entry }) => {
   const [note, setNote] = useState("");
@@ -115,7 +117,7 @@ export const Shortlist = () => {
           {visible.map((e) => (
             <div key={e.id} className="card space-y-3 p-5">
               <div className="flex items-start gap-3">
-                <Avatar name={e.studentName} size="md" />
+                <PersonAvatar uid={e.studentUid} name={e.studentName} size="md" />
                 <div className="min-w-0 flex-1">
                   <Link to={`/students/${e.studentUid}`} className="font-semibold text-slate-900 hover:text-blue-700">
                     {e.studentName}
@@ -127,14 +129,15 @@ export const Shortlist = () => {
               <NoteEditor entry={e} />
               <div className="flex flex-wrap gap-2">
                 {e.status === "shortlisted" ? (
-                  <button className="btn btn-primary btn-sm" onClick={() => run(() => updateShortlist(e.id, { status: "referred" }))}>
+                  <button className="btn btn-primary btn-sm" onClick={() => run(() => updateShortlist(user, e, { status: "referred" }))}>
                     Mark as referred
                   </button>
                 ) : (
-                  <button className="btn btn-secondary btn-sm" onClick={() => run(() => updateShortlist(e.id, { status: "shortlisted" }))}>
+                  <button className="btn btn-secondary btn-sm" onClick={() => run(() => updateShortlist(user, e, { status: "shortlisted" }))}>
                     Undo referral
                   </button>
                 )}
+                <MessageButton person={{ uid: e.studentUid, name: e.studentName, role: "student" }} />
                 {e.studentEmail && (
                   <a href={`mailto:${e.studentEmail}`} className="btn btn-secondary btn-sm">
                     <Mail className="h-3.5 w-3.5" /> Email

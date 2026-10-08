@@ -2,6 +2,7 @@ import React from "react";
 import { Award, Briefcase, ExternalLink, GraduationCap, Languages, Mail, MapPin, Phone, Wrench } from "lucide-react";
 import { toUrl } from "../utils/format";
 import { Avatar } from "./ui";
+import { avatarUrl } from "../utils/upload";
 
 const Section = ({ icon: Icon, title, children }) => (
   <section className="card p-5">
@@ -37,7 +38,7 @@ export const StudentProfileView = ({ profile, actions }) => {
       <div className="space-y-6 lg:col-span-2">
         <section className="card p-5 sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-            <Avatar name={p.name} photoURL={p.photoURL} size="xl" />
+            <Avatar name={p.name} photoURL={avatarUrl(p.photoURL, 256)} size="xl" />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl font-bold tracking-tight">{p.name}</h1>

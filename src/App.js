@@ -7,8 +7,13 @@ import { Spinner } from "./components/ui";
 
 import { AuthPage } from "./pages/AuthPage";
 import { NotFound } from "./pages/NotFound";
+import { PrivacyPage, TermsPage } from "./pages/LegalPages";
 import { DiscussionPage } from "./pages/shared/DiscussionPage";
 import { StudentProfilePage } from "./pages/shared/StudentProfilePage";
+import { PersonProfilePage } from "./pages/shared/PersonProfilePage";
+import { MessagesPage } from "./pages/shared/MessagesPage";
+import { NotificationsPage } from "./pages/shared/NotificationsPage";
+import { SettingsPage } from "./pages/shared/SettingsPage";
 
 import { StudentDashboard } from "./pages/student/StudentDashboard";
 import { ProfileBuilder } from "./pages/student/ProfileBuilder";
@@ -27,6 +32,7 @@ import { AlumniProfile } from "./pages/alumni/AlumniProfile";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { AdminUsers } from "./pages/admin/AdminUsers";
 import { AdminContent } from "./pages/admin/AdminContent";
+import { AdminRollList } from "./pages/admin/AdminRollList";
 
 const HomeRedirect = () => {
   const { authUser, user, loading } = useAuth();
@@ -45,12 +51,19 @@ function App() {
           <Route path="/" element={<HomeRedirect />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/login" element={<Navigate to="/auth" replace />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
 
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               {/* Shared by every role */}
               <Route path="/discussion" element={<DiscussionPage />} />
               <Route path="/students/:uid" element={<StudentProfilePage />} />
+              <Route path="/profile/:uid" element={<PersonProfilePage />} />
+              <Route path="/messages" element={<MessagesPage />} />
+              <Route path="/messages/:cid" element={<MessagesPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
 
               <Route element={<ProtectedRoute role="student" />}>
                 <Route path="/student" element={<StudentDashboard />} />
@@ -77,6 +90,7 @@ function App() {
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/users" element={<AdminUsers />} />
                 <Route path="/admin/content" element={<AdminContent />} />
+                <Route path="/admin/roll-list" element={<AdminRollList />} />
               </Route>
             </Route>
           </Route>

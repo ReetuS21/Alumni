@@ -4,7 +4,8 @@ import { Download, Search, Users } from "lucide-react";
 import { formatDate, includesText } from "../../utils/format";
 import { downloadCsv } from "../../utils/csv";
 import { ReviewActions, UserDetailsModal, useAllUsers } from "../../components/admin/AdminUserTools";
-import { Alert, Avatar, EmptyState, FilterChips, PageHeader, RoleBadge, Spinner, StatusBadge } from "../../components/ui";
+import { PersonAvatar } from "../../context/PeopleContext";
+import { Alert, EmptyState, FilterChips, PageHeader, RoleBadge, Spinner, StatusBadge } from "../../components/ui";
 
 const STATUSES = ["all", "pending", "approved", "rejected", "suspended"];
 
@@ -29,8 +30,8 @@ export const AdminUsers = () => {
   const exportCsv = () =>
     downloadCsv(
       `users-${new Date().toISOString().slice(0, 10)}.csv`,
-      ["Name", "Email", "Role", "Status", "Registered", "Reviewed by", "Note"],
-      filtered.map((u) => [u.name, u.email, u.role, u.status, formatDate(u.createdAt), u.reviewedBy || "", u.reviewNote || ""])
+      ["Name", "Email", "Email verified", "Role", "Status", "Registered", "Reviewed by", "Note"],
+      filtered.map((u) => [u.name, u.email, u.emailVerified ? "Yes" : "No", u.role, u.status, formatDate(u.createdAt), u.reviewedBy || "", u.reviewNote || ""])
     );
 
   return (
@@ -76,10 +77,12 @@ export const AdminUsers = () => {
           {filtered.map((u) => (
             <li key={u.uid} className="flex flex-col gap-3 p-4 md:flex-row md:items-center">
               <button className="flex min-w-0 flex-1 items-center gap-3 text-left" onClick={() => setSelected(u)}>
-                <Avatar name={u.name} size="sm" />
+                <PersonAvatar uid={u.uid} name={u.name} photoURL={u.photoURL} size="sm" />
                 <div className="min-w-0">
                   <p className="truncate font-medium text-slate-900 hover:text-blue-700">{u.name}</p>
-                  <p className="truncate text-xs text-slate-500">{u.email}</p>
+                  <p className="truncate text-xs text-slate-500">
+                    {u.email} {u.emailVerified && <span className="text-emerald-600" title="Email verified">✓</span>}
+                  </p>
                 </div>
               </button>
               <div className="flex items-center gap-2 md:w-48">

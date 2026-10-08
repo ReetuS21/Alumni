@@ -6,9 +6,11 @@ import { useAuth } from "../context/AuthContext";
 import { useLiveQuery } from "../hooks/useLive";
 import { deleteChatMessage, sendChatMessage } from "../services/api";
 import { formatDate, formatTime, toDate } from "../utils/format";
-import { Alert, Avatar, RoleBadge } from "./ui";
+import { PersonAvatar } from "../context/PeopleContext";
+import { Alert, RoleBadge } from "./ui";
 
 const MAX_LEN = 1000;
+const PAGE = 100;
 
 /**
  * Module 2 — Global Discussion Box.
@@ -22,11 +24,13 @@ export const GlobalDiscussionBox = ({ className = "h-[560px]" }) => {
   const [error, setError] = useState("");
   const listRef = useRef(null);
   const stickToBottom = useRef(true);
+  const [pageSize, setPageSize] = useState(PAGE);
 
   const { data, loading } = useLiveQuery(
-    () => query(collection(db, "chatMessages"), orderBy("sentAt", "desc"), limit(150)),
-    []
+    () => query(collection(db, "chatMessages"), orderBy("sentAt", "desc"), limit(pageSize)),
+    [pageSize]
   );
+  const hasMore = data.length >= pageSize;
   const messages = useMemo(() => [...data].reverse(), [data]);
   const byId = useMemo(() => Object.fromEntries(data.map((m) => [m.id, m])), [data]);
   // replyTo is a message id; older messages stored a { senderName, text } object.
@@ -102,7 +106,21 @@ export const GlobalDiscussionBox = ({ className = "h-[560px]" }) => {
       </header>
 
       <div ref={listRef} className="flex-1 space-y-4 overflow-y-auto bg-slate-50/60 px-4 py-4">
-        {loading && <p className="py-10 text-center text-sm text-slate-400">Loading messages…</p>}
+        {loading && !data.length && <p className="py-10 text-center text-sm text-slate-400">Loading messages…</p>}
+        {hasMore && (
+          <div className="text-center">
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={() => {
+                stickToBottom.current = false;
+                setPageSize((n) => n + PAGE);
+              }}
+            >
+              Load earlier messages
+            </button>
+          </div>
+        )}
         {!loading && messages.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center text-center text-sm text-slate-400">
             <MessagesSquare className="mb-2 h-8 w-8 stroke-1" />
@@ -125,7 +143,7 @@ export const GlobalDiscussionBox = ({ className = "h-[560px]" }) => {
                 </div>
               )}
               <div className={`group flex gap-2.5 ${mine ? "flex-row-reverse" : ""}`}>
-                <Avatar name={msg.senderName} size="xs" />
+                <PersonAvatar uid={msg.senderUid} name={msg.senderName} size="xs" />
                 <div className={`flex max-w-[80%] flex-col ${mine ? "items-end" : "items-start"}`}>
                   <div className="mb-1 flex flex-wrap items-center gap-1.5">
                     <span className="text-xs font-semibold text-slate-700">{mine ? "You" : msg.senderName}</span>

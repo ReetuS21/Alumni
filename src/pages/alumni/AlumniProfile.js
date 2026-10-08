@@ -5,7 +5,8 @@ import { db } from "../../firebase";
 import { useAuth } from "../../context/AuthContext";
 import { saveAlumniProfile } from "../../services/api";
 import { friendlyError } from "../../utils/authErrors";
-import { Alert, Avatar, Field, PageHeader, RoleBadge, Spinner } from "../../components/ui";
+import { PhotoUploader } from "../../components/PhotoUploader";
+import { Alert, Field, PageHeader, RoleBadge, Spinner } from "../../components/ui";
 
 const FIELDS = ["name", "company", "jobRole", "domain", "experienceYears", "location", "batch", "linkedin", "bio"];
 
@@ -14,11 +15,13 @@ export const AlumniProfile = () => {
   const [form, setForm] = useState(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(null);
+  const [photoURL, setPhotoURL] = useState("");
 
   useEffect(() => {
     getDoc(doc(db, "alumniProfiles", user.uid))
       .then((snap) => {
         const d = snap.exists() ? snap.data() : {};
+        setPhotoURL(d.photoURL || "");
         setForm(Object.fromEntries(FIELDS.map((k) => [k, d[k] != null ? String(d[k]) : k === "name" ? user.name || "" : ""])));
       })
       .catch((e) => setMessage({ tone: "error", text: friendlyError(e) }));
@@ -48,7 +51,7 @@ export const AlumniProfile = () => {
       <PageHeader title="My Profile" subtitle="Students see this in the Find Alumni directory — your company is highlighted on your card." />
       <form onSubmit={submit} className="card max-w-3xl space-y-5 p-6">
         <div className="flex items-center gap-4">
-          <Avatar name={form.name} size="lg" />
+          <PhotoUploader name={form.name} photoURL={photoURL} onChange={setPhotoURL} size="lg" />
           <div>
             <p className="text-lg font-semibold">{form.name}</p>
             <p className="text-sm text-slate-500">{[form.jobRole, form.company].filter(Boolean).join(" at ")}</p>

@@ -1,18 +1,20 @@
 /**
- * Creates the three test accounts (and some sample content) in your Firebase project.
+ * Sets up the super admin account in your Firebase project.
  *
- *   npm run seed
+ *   npm run seed                      → super admin only (use this for the real, live project)
+ *   npm run seed -- --demo            → also creates 3 demo accounts with sample posts (local testing only)
  *
- * Reads the Firebase keys from .env (same variables the app uses). Safe to run more than once:
- * existing accounts are signed in and updated instead of re-created, and sample posts/messages
- * are only added if that account has none yet.
+ * The super admin password comes from SUPER_ADMIN_PASSWORD (shell or .env), default "alumni267".
+ * Change it from Settings → Change password after the first login.
+ *
+ * Reads the Firebase keys from .env (same variables the app uses). Safe to run more than once.
  */
 import { readFileSync, existsSync } from "node:fs";
 import { initializeApp } from "firebase/app";
 import { connectAuthEmulator, createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword, signOut, updateProfile } from "firebase/auth";
 import { addDoc, collection, connectFirestoreEmulator, doc, getDoc, getDocs, getFirestore, query, serverTimestamp, setDoc, updateDoc, where } from "firebase/firestore";
 
-const PASSWORD = "alumni267";
+const DEMO = process.argv.includes("--demo");
 
 // ---------- load .env (variables already set in the shell take precedence) ----------
 const env = {};
@@ -24,6 +26,8 @@ for (const file of [".env", ".env.local"]) {
   }
 }
 Object.assign(env, process.env);
+const PASSWORD = env.SUPER_ADMIN_PASSWORD || "alumni267";
+const DEMO_PASSWORD = "alumni267";
 const config = {
   apiKey: env.REACT_APP_FIREBASE_API_KEY,
   authDomain: env.REACT_APP_FIREBASE_AUTH_DOMAIN,
@@ -137,15 +141,15 @@ const ACCOUNTS = [
 ];
 
 // ---------- helpers ----------
-const signInOrCreate = async (email, name) => {
+const signInOrCreate = async (email, name, password) => {
   try {
-    const cred = await createUserWithEmailAndPassword(auth, email, PASSWORD);
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(cred.user, { displayName: name });
     console.log(`  ✓ created ${email}`);
     return cred.user;
   } catch (e) {
     if (e.code !== "auth/email-already-in-use") throw e;
-    const cred = await signInWithEmailAndPassword(auth, email, PASSWORD);
+    const cred = await signInWithEmailAndPassword(auth, email, password);
     console.log(`  • ${email} already exists — signed in`);
     return cred.user;
   }
@@ -159,7 +163,7 @@ const run = async () => {
 
   // 1) Super admin account
   console.log(`ADMIN: ${ADMIN.email}`);
-  const adminUser = await signInOrCreate(ADMIN.email, ADMIN.name);
+  const adminUser = await signInOrCreate(ADMIN.email, ADMIN.name, PASSWORD);
   const adminRef = doc(db, "users", adminUser.uid);
   if (!(await getDoc(adminRef)).exists()) {
     await setDoc(adminRef, { uid: adminUser.uid, name: ADMIN.name, email: ADMIN.email, role: "admin", status: "approved", createdAt: serverTimestamp() });
@@ -168,11 +172,11 @@ const run = async () => {
   await signOut(auth);
   console.log("");
 
-  // 2) Test accounts + profiles (new accounts start "pending")
+  // 2) Demo accounts + profiles (new accounts start "pending") — only with --demo
   const ready = [];
-  for (const acc of ACCOUNTS) {
+  for (const acc of DEMO ? ACCOUNTS : []) {
     console.log(`${acc.role.toUpperCase()}: ${acc.email}`);
-    const user = await signInOrCreate(acc.email, acc.name);
+    const user = await signInOrCreate(acc.email, acc.name, DEMO_PASSWORD);
     const userRef = doc(db, "users", user.uid);
     const existing = await getDoc(userRef);
     if (existing.exists() && existing.data().role !== acc.role) {
@@ -209,7 +213,7 @@ const run = async () => {
 
   // 4) Sample content (only for accounts that have none yet)
   for (const { acc, uid, displayName } of ready) {
-    await signInWithEmailAndPassword(auth, acc.email, PASSWORD);
+    await signInWithEmailAndPassword(auth, acc.email, DEMO_PASSWORD);
     if (acc.posts.length) {
       const mine = await getDocs(query(collection(db, "posts"), where("authorUid", "==", uid)));
       if (mine.empty) {
@@ -246,8 +250,8 @@ const run = async () => {
     await signOut(auth);
   }
 
-  console.log("\nDone. Log in with any of these (password: alumni267):");
-  [...ACCOUNTS, { role: "admin", email: ADMIN.email }].forEach((a) => console.log(`  ${a.role.padEnd(8)} ${a.email}`));
+  console.log(`\nDone. Super admin: ${ADMIN.email}`);
+  if (DEMO) ACCOUNTS.forEach((a) => console.log(`  demo ${a.role.padEnd(8)} ${a.email} / ${DEMO_PASSWORD}`));
   process.exit(0);
 };
 

@@ -1,13 +1,20 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import {
+  EmailAuthProvider,
   createUserWithEmailAndPassword,
+  deleteUser,
   onAuthStateChanged,
+  reauthenticateWithCredential,
+  sendEmailVerification,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
+  updatePassword,
   updateProfile,
 } from "firebase/auth";
-import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, serverTimestamp, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../firebase";
+import { deleteMyData, isPreapproved, notifyAdminOfRegistration } from "../services/api";
 import { emptyStudentProfile } from "../utils/profile";
 
 const AuthContext = createContext(null);
@@ -90,16 +97,29 @@ export const AuthProvider = ({ children }) => {
     const uid = cred.user.uid;
     email = cred.user.email; // Firebase normalises the address (lower-case); rules compare against it
 
+    // Emails on the super admin's roll list are approved straight away; everyone else waits for review.
+    const preapproved = await isPreapproved(email, role);
+    const status = preapproved ? "approved" : "pending";
+
     // 1) users doc first — the security rules read the role from here.
     try {
-      // Every new account waits for the super admin to approve it.
-      await setDoc(doc(db, "users", uid), { uid, name, email, role, status: "pending", createdAt: serverTimestamp() });
+      await setDoc(doc(db, "users", uid), {
+        uid,
+        name,
+        email,
+        role,
+        status,
+        ...(preapproved ? { reviewedBy: "roll list", reviewedAt: serverTimestamp() } : {}),
+        createdAt: serverTimestamp(),
+      });
     } catch (err) {
       // Don't leave a login without a role behind — remove it so the person can simply try again.
       await cred.user.delete().catch(() => {});
       throw err;
     }
     updateProfile(cred.user, { displayName: name }).catch(() => {});
+    sendEmailVerification(cred.user, { url: `${window.location.origin}/` }).catch(() => {});
+    if (!preapproved) notifyAdminOfRegistration({ uid, name, email, role });
 
     // 2) then the role-specific profile (pages cope with a missing profile, so a failure here is not fatal).
     if (role === "student") {
@@ -144,10 +164,69 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => signOut(auth);
 
-  const user = authUser && userDoc ? { ...userDoc, uid: authUser.uid, email: authUser.email, status: accountStatus(userDoc) } : null;
+  const resetPassword = (email) => sendPasswordResetEmail(auth, email, { url: `${window.location.origin}/auth` });
+
+  const resendVerification = () => sendEmailVerification(auth.currentUser, { url: `${window.location.origin}/` });
+
+  /** Re-reads the login from Firebase; returns true once the email address is verified. */
+  const refreshVerification = async () => {
+    await auth.currentUser.reload();
+    if (!auth.currentUser.emailVerified) return false;
+    await auth.currentUser.getIdToken(true); // the new token carries email_verified for the security rules
+    await updateDoc(doc(db, "users", auth.currentUser.uid), { emailVerified: true }).catch(() => {});
+    setAuthUser({ ...auth.currentUser });
+    return true;
+  };
+
+  const reauthenticate = (password) =>
+    reauthenticateWithCredential(auth.currentUser, EmailAuthProvider.credential(auth.currentUser.email, password));
+
+  const changePassword = async (currentPassword, newPassword) => {
+    await reauthenticate(currentPassword);
+    await updatePassword(auth.currentUser, newPassword);
+  };
+
+  /** Deletes all of this person's data and their login. Requires the current password. */
+  const deleteAccount = async (password) => {
+    await reauthenticate(password);
+    const current = auth.currentUser;
+    await deleteMyData({ ...userDoc, uid: current.uid });
+    await deleteUser(current);
+  };
+
+  // Keep users/{uid}.emailVerified in step with Firebase Auth so the super admin can see it.
+  useEffect(() => {
+    if (authUser?.emailVerified && userDoc && !userDoc.emailVerified) {
+      auth.currentUser
+        ?.getIdToken(true)
+        .then(() => updateDoc(doc(db, "users", authUser.uid), { emailVerified: true }))
+        .catch(() => {});
+    }
+  }, [authUser, userDoc]);
+
+  const user =
+    authUser && userDoc
+      ? { ...userDoc, uid: authUser.uid, email: authUser.email, emailVerified: Boolean(authUser.emailVerified), status: accountStatus(userDoc) }
+      : null;
 
   return (
-    <AuthContext.Provider value={{ authUser, user, role: user?.role || null, loading, connectionError, register, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        authUser,
+        user,
+        role: user?.role || null,
+        loading,
+        connectionError,
+        register,
+        login,
+        logout,
+        resetPassword,
+        resendVerification,
+        refreshVerification,
+        changePassword,
+        deleteAccount,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

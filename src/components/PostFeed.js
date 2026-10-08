@@ -7,6 +7,8 @@ import { useLiveQuery } from "../hooks/useLive";
 import { PostCard } from "./PostCard";
 import { Alert, EmptyState, FilterChips, Spinner } from "./ui";
 
+const PAGE = 25;
+
 const FILTERS = [
   { value: "all", label: "All" },
   { value: "hiring", label: "Hiring" },
@@ -19,11 +21,13 @@ const FILTERS = [
 export const PostFeed = ({ title = "Feed" }) => {
   const { user } = useAuth();
   const [filter, setFilter] = useState("all");
+  const [pageSize, setPageSize] = useState(PAGE);
 
   const { data: posts, loading, error } = useLiveQuery(
-    () => query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(100)),
-    []
+    () => query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(pageSize)),
+    [pageSize]
   );
+  const hasMore = posts.length >= pageSize;
   const { data: myApps } = useLiveQuery(
     () => (user.role === "student" ? query(collection(db, "applications"), where("studentUid", "==", user.uid)) : null),
     [user.uid, user.role]
@@ -38,12 +42,19 @@ export const PostFeed = ({ title = "Feed" }) => {
         <FilterChips options={FILTERS} value={filter} onChange={setFilter} />
       </div>
       {error && <Alert tone="error">Could not load posts: {error.message}</Alert>}
-      {loading ? (
+      {loading && !posts.length ? (
         <Spinner label="Loading posts…" />
       ) : visible.length === 0 ? (
         <EmptyState icon={Newspaper} title="Nothing here yet" text="New notices, polls, openings and tests will appear here." />
       ) : (
         visible.map((p) => <PostCard key={p.id} post={p} applied={appliedIds.has(p.id)} />)
+      )}
+      {hasMore && !loading && (
+        <div className="flex justify-center">
+          <button className="btn btn-secondary" onClick={() => setPageSize((n) => n + PAGE)}>
+            Load older posts
+          </button>
+        </div>
       )}
     </section>
   );

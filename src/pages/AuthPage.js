@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { ArrowRight, BookOpen, Briefcase, GraduationCap, MessagesSquare, ShieldCheck, FileText } from "lucide-react";
 import { dashboardPath, useAuth } from "../context/AuthContext";
 import { friendlyError } from "../utils/authErrors";
@@ -11,15 +11,6 @@ const ROLE_OPTIONS = [
   { value: "alumni", label: "Alumni", icon: Briefcase },
 ];
 
-const TEST_PASSWORD = "alumni267";
-const TEST_ACCOUNTS = [
-  { role: "Student", email: "student@gmail.com" },
-  { role: "Teacher", email: "teacher@gmail.com" },
-  { role: "Alumni", email: "alumni@gmail.com" },
-  { role: "Super Admin", email: "superadmin@gmail.com" },
-];
-const SHOW_TEST_ACCOUNTS = process.env.REACT_APP_SHOW_TEST_ACCOUNTS !== "false";
-
 const FEATURES = [
   { icon: MessagesSquare, text: "One live discussion space for students, teachers and alumni" },
   { icon: FileText, text: "Build your profile once and export an ATS-friendly resume" },
@@ -27,13 +18,15 @@ const FEATURES = [
 ];
 
 export const AuthPage = () => {
-  const { authUser, user, loading, login, logout, register } = useAuth();
+  const { authUser, user, loading, login, logout, register, resetPassword } = useAuth();
   const navigate = useNavigate();
 
   const [mode, setMode] = useState("signin");
   const [role, setRole] = useState("student");
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "", department: "", designation: "", company: "", jobRole: "", batch: "" });
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
 
   // While submitting, stay on this page so errors from the later registration steps can be shown.
@@ -42,10 +35,35 @@ export const AuthPage = () => {
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
   const isSignUp = mode === "signup";
+  const isReset = mode === "reset";
+  const switchMode = (next) => {
+    setMode(next);
+    setError("");
+    setNotice("");
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setNotice("");
+    if (isReset) {
+      setBusy(true);
+      try {
+        await resetPassword(form.email.trim());
+        setNotice("If an account exists for this email, a password reset link is on its way. Check your inbox and spam folder.");
+      } catch (err) {
+        // Don't reveal whether an address is registered.
+        if (err.code === "auth/user-not-found") setNotice("If an account exists for this email, a password reset link is on its way. Check your inbox and spam folder.");
+        else setError(friendlyError(err));
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+    if (isSignUp && !agreed) {
+      setError("Please accept the Terms of Use and Privacy Policy to continue.");
+      return;
+    }
     if (isSignUp && form.password !== form.confirm) {
       setError("Passwords do not match.");
       return;
@@ -74,12 +92,6 @@ export const AuthPage = () => {
     } finally {
       setBusy(false);
     }
-  };
-
-  const fillTestAccount = (email) => {
-    setMode("signin");
-    setError("");
-    setForm((f) => ({ ...f, email, password: TEST_PASSWORD }));
   };
 
   return (
@@ -115,9 +127,11 @@ export const AuthPage = () => {
             <span className="text-xl font-bold">Alumni Hub</span>
           </div>
 
-          <h2 className="text-2xl font-bold tracking-tight">{isSignUp ? "Create your account" : "Welcome back"}</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{isReset ? "Reset your password" : isSignUp ? "Create your account" : "Welcome back"}</h2>
           <p className="mt-1 text-sm text-slate-500">
-            {isSignUp
+            {isReset
+              ? "Enter the email you registered with and we will send you a link to choose a new password."
+              : isSignUp
               ? "Choose your role. New accounts are checked by the administrator before they can be used."
               : "Sign in to continue to your dashboard."}
           </p>
@@ -135,9 +149,18 @@ export const AuthPage = () => {
             <Field label="Email">
               <input required type="email" className="input" autoComplete="email" value={form.email} onChange={set("email")} placeholder="you@example.com" />
             </Field>
-            <Field label="Password">
-              <input required type="password" minLength={6} className="input" autoComplete={isSignUp ? "new-password" : "current-password"} value={form.password} onChange={set("password")} />
-            </Field>
+            {!isReset && (
+              <Field label="Password">
+                <input required type="password" minLength={6} className="input" autoComplete={isSignUp ? "new-password" : "current-password"} value={form.password} onChange={set("password")} />
+              </Field>
+            )}
+            {mode === "signin" && (
+              <div className="-mt-2 text-right">
+                <button type="button" className="text-xs font-semibold text-blue-600 hover:underline" onClick={() => switchMode("reset")}>
+                  Forgot password?
+                </button>
+              </div>
+            )}
 
             {isSignUp && (
               <Field label="Confirm password">
@@ -169,44 +192,49 @@ export const AuthPage = () => {
               </div>
             )}
 
+            {isSignUp && (
+              <label className="flex items-start gap-2 text-sm text-slate-600">
+                <input type="checkbox" className="mt-0.5 h-4 w-4 rounded border-slate-300" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+                <span>
+                  I agree to the{" "}
+                  <Link to="/terms" target="_blank" className="font-semibold text-blue-600 hover:underline">
+                    Terms of Use
+                  </Link>{" "}
+                  and{" "}
+                  <Link to="/privacy" target="_blank" className="font-semibold text-blue-600 hover:underline">
+                    Privacy Policy
+                  </Link>
+                  .
+                </span>
+              </label>
+            )}
+
             <Alert tone="error">{error}</Alert>
+            <Alert tone="success">{notice}</Alert>
 
             <button type="submit" disabled={busy} className="btn btn-primary w-full py-2.5">
-              {busy ? "Please wait…" : isSignUp ? `Create ${role} account` : "Sign in"}
+              {busy ? "Please wait…" : isReset ? "Send reset link" : isSignUp ? `Create ${role} account` : "Sign in"}
               {!busy && <ArrowRight className="h-4 w-4" />}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-slate-500">
-            {isSignUp ? "Already have an account?" : "New to Alumni Hub?"}{" "}
-            <button
-              type="button"
-              className="font-semibold text-blue-600 hover:underline"
-              onClick={() => {
-                setMode(isSignUp ? "signin" : "signup");
-                setError("");
-              }}
-            >
-              {isSignUp ? "Sign in" : "Create an account"}
+            {isReset ? "Remembered it?" : isSignUp ? "Already have an account?" : "New to Alumni Hub?"}{" "}
+            <button type="button" className="font-semibold text-blue-600 hover:underline" onClick={() => switchMode(isSignUp || isReset ? "signin" : "signup")}>
+              {isSignUp || isReset ? "Sign in" : "Create an account"}
             </button>
           </p>
 
-          {SHOW_TEST_ACCOUNTS && !isSignUp && (
-            <div className="mt-8 rounded-xl border border-dashed border-slate-300 bg-white p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Test accounts</p>
-              <p className="mt-1 text-xs text-slate-500">
-                Click to fill in. Password for all: <code className="rounded bg-slate-100 px-1 font-semibold">{TEST_PASSWORD}</code>
-              </p>
-              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {TEST_ACCOUNTS.map((a) => (
-                  <button key={a.email} type="button" onClick={() => fillTestAccount(a.email)} className="btn btn-secondary btn-sm flex-col gap-0 py-2">
-                    <span>{a.role}</span>
-                    <span className="max-w-full truncate text-[10px] font-normal text-slate-400">{a.email}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          <p className="mt-8 text-center text-xs text-slate-400">
+            <Link to="/privacy" className="hover:underline">
+              Privacy Policy
+            </Link>
+            {" · "}
+            <Link to="/terms" className="hover:underline">
+              Terms of Use
+            </Link>
+          </p>
+
         </div>
       </div>
     </div>

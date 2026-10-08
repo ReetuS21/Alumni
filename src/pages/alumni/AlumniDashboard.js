@@ -10,14 +10,17 @@ import { formatDate, millis, toUrl } from "../../utils/format";
 import { CreatePostForm } from "../../components/CreatePostForm";
 import { PostCard } from "../../components/PostCard";
 import { GlobalDiscussionBox } from "../../components/GlobalDiscussionBox";
-import { Alert, Avatar, EmptyState, PageHeader, Spinner, StatCard } from "../../components/ui";
+import { PersonAvatar } from "../../context/PeopleContext";
+import { MessageButton } from "../../components/MessageButton";
+import { Alert, EmptyState, PageHeader, Spinner, StatCard } from "../../components/ui";
 
 const Applicants = ({ applicants }) => {
+  const { user } = useAuth();
   const [error, setError] = useState("");
-  const change = async (id, status) => {
+  const change = async (application, status) => {
     setError("");
     try {
-      await setApplicationStatus(id, status);
+      await setApplicationStatus(user, application, status);
     } catch {
       setError("Could not update the status.");
     }
@@ -35,7 +38,7 @@ const Applicants = ({ applicants }) => {
           {applicants.map((a) => (
             <li key={a.id} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center">
               <div className="flex min-w-0 flex-1 items-center gap-3">
-                <Avatar name={a.studentName} size="xs" />
+                <PersonAvatar uid={a.studentUid} name={a.studentName} size="xs" />
                 <div className="min-w-0">
                   <Link to={`/students/${a.studentUid}`} className="truncate text-sm font-medium text-slate-900 hover:text-blue-700">
                     {a.studentName}
@@ -53,7 +56,8 @@ const Applicants = ({ applicants }) => {
                   </p>
                 </div>
               </div>
-              <select className="input w-full py-1.5 text-xs sm:w-36" value={a.status} onChange={(e) => change(a.id, e.target.value)}>
+              <MessageButton person={{ uid: a.studentUid, name: a.studentName, role: "student" }} className="btn-ghost" />
+              <select className="input w-full py-1.5 text-xs sm:w-36" value={a.status} onChange={(e) => change(a, e.target.value)}>
                 <option value="applied">Applied</option>
                 <option value="shortlisted">Shortlisted</option>
                 <option value="rejected">Rejected</option>

@@ -2,6 +2,7 @@ import React from "react";
 import { Ban, Clock, LogOut, XCircle } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { RoleBadge } from "./ui";
+import { EmailVerification } from "../pages/shared/SettingsPage";
 
 const CONTENT = {
   pending: {
@@ -42,6 +43,12 @@ export const AccountStatusScreen = () => {
           <p className="mt-4 rounded-lg bg-slate-50 px-3 py-2 text-left text-sm text-slate-600">
             <span className="font-semibold">Note from the administrator:</span> {user.reviewNote}
           </p>
+        )}
+        {user.status === "pending" && (
+          <div className="mt-5 rounded-lg border border-slate-200 p-4 text-left">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">While you wait</p>
+            <EmailVerification />
+          </div>
         )}
         <div className="mt-6 flex items-center justify-center gap-2 text-sm text-slate-500">
           <span className="truncate">{user.email}</span>
