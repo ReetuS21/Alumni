@@ -46,10 +46,11 @@ React (Create React App) + Tailwind CSS + Firebase (Auth, Cloud Firestore), depl
 | Service | Used for | Variables |
 |---|---|---|
 | [Cloudinary](https://cloudinary.com) (free) | Profile photos and certificate files | `REACT_APP_CLOUDINARY_CLOUD_NAME`, `REACT_APP_CLOUDINARY_UPLOAD_PRESET` (an **unsigned** upload preset). To allow PDF certificates to open, enable *Settings → Security → Allow delivery of PDF and ZIP files*. |
+| [EmailJS](https://www.emailjs.com) (free, 200 emails/month) | Email to the Super Admin for every new registration, and to a person when their account is approved | `REACT_APP_EMAILJS_SERVICE_ID`, `REACT_APP_EMAILJS_TEMPLATE_ID`, `REACT_APP_EMAILJS_PUBLIC_KEY`, `REACT_APP_ADMIN_ALERT_EMAIL`. The template uses `{{to_email}}`, `{{to_name}}`, `{{subject}}`, `{{message}}`, `{{link}}`. |
 | Firebase App Check (reCAPTCHA v3, free) | Blocks scripts that call the database without the app | `REACT_APP_RECAPTCHA_SITE_KEY` |
 | Google Analytics for Firebase (free) | Usage statistics | `REACT_APP_FIREBASE_MEASUREMENT_ID` |
 
-Without these keys the app still works: photo upload buttons are replaced by a short "not set up yet" note.
+Without these keys the app still works: photo upload buttons are replaced by a short "not set up yet" note and emails are skipped (in-app notifications always work).
 
 ## Deploying on Vercel
 

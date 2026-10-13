@@ -14,6 +14,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { emailAccountApproved } from "../utils/email";
 
 // ---------- Notifications ----------
 
@@ -310,6 +311,8 @@ export const reviewUser = async (admin, target, status, reviewNote = "") => {
     const body = reviewNote ? `${text} Note: ${reviewNote}` : text;
     notify(admin, { toUid: target.uid, type: "account", title, body, link: "/" });
   }
+  // Email only when someone is newly let in (not when an approved account is edited again).
+  if (status === "approved" && target.status !== "approved") emailAccountApproved(target);
 };
 
 export const deleteApplication = (id) => deleteDoc(doc(db, "applications", id));

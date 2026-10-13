@@ -16,6 +16,7 @@ import { doc, getDoc, onSnapshot, serverTimestamp, setDoc, updateDoc } from "fir
 import { auth, db } from "../firebase";
 import { deleteMyData, isPreapproved, notifyAdminOfRegistration } from "../services/api";
 import { emptyStudentProfile } from "../utils/profile";
+import { emailAccountApproved, emailAdminNewRegistration } from "../utils/email";
 
 const AuthContext = createContext(null);
 
@@ -120,6 +121,9 @@ export const AuthProvider = ({ children }) => {
     updateProfile(cred.user, { displayName: name }).catch(() => {});
     sendEmailVerification(cred.user, { url: `${window.location.origin}/` }).catch(() => {});
     if (!preapproved) notifyAdminOfRegistration({ uid, name, email, role });
+    // Email the Super Admin about every new account; roll-list members are told they are approved.
+    emailAdminNewRegistration({ name, email, role }, { preapproved });
+    if (preapproved) emailAccountApproved({ name, email });
 
     // 2) then the role-specific profile (pages cope with a missing profile, so a failure here is not fatal).
     if (role === "student") {
